@@ -10,4 +10,6 @@ Includes:
 - Comparative statics of equilibrium delay in exit times
 
 
+![alt tag](https://raw.githubusercontent.com/peitalin/CoarseClocks/master/awareness_dist.png)
+
 
