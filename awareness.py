@@ -184,48 +184,51 @@ def equilibrium_delay():
     r=0.05
     g=0.15
     f=0
-    tau = linspace(0, 2, 500)
+    tau = linspace(0, 20, 1000)
+    lhigh = 0.09
+    llow  = 0.03
+    lavg  = (lhigh + llow) / 2
 
-    def beta(t, g=g, f=f, r=r):
+    def B(t, g=g, f=f, r=r):
         return 1 - exp(-(g+f-r)*t)
 
     color = ['dodgerblue', 'palevioletred', 'black']
-    l = 0.08
+    l = llow
     f = 0.0
-    plot(tau, list(map(lambda B: -log((g+f-r)/(g+f-r-l*B))/l, tau)),
-            label=r"$f={},\, \lambda={}$".format(f,l), linestyle='--', color=color[0])
+    plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
+            label=r"$f={},\, \lambda={}$".format(f,l), linestyle='--', linewidth=1, color=color[0])
 
-    l = 0.14
+    l = lhigh
     f = 0.0
-    plot(tau, list(map(lambda B: -log((g+f-r)/(g+f-r-l*B))/l, tau)),
-            label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', color=color[0])
+    plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
+            label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', linewidth=1, color=color[0])
 
-    l = 0.14
-    f = 0.02
-    plot(tau, list(map(lambda B: -log((g+f-r)/(g+f-r-l*B))/l, tau)),
-            label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', color=color[1])
+    l = lhigh
+    f = 0.01
+    plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
+            label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', linewidth=1, color=color[1])
 
-    l = 0.11
+    l = lavg
     f = 0.0
-    plot(tau, list(map(lambda B: -log((g+f-r)/(g+f-r-l*B))/l, tau)),
-            label=r"$f={},\, \lambda={}$ (arbitraguer)".format(f,l), linestyle='-.', color=color[2], alpha=0.5)
+    plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
+            label=r"$f={},\, \lambda={}$ (arbitraguer)".format(f,l), linestyle='-.', linewidth=1, color=color[2])
 
 
     # endogenous crash time: \tau + nk
-    n = 10
-    k = 0.75
-    cost_benefit = [(g-r)/(n*k*t) for t in tau]
-    hazard_rate_eq = l/(1-exp(-l*n*k))
-    equilibrium_tau = (g-r)/hazard_rate_eq
-    axvline(x=equilibrium_tau, linewidth=1, color='k', linestyle='--',
-            label=r"Endogenous Burst Time: $\tau^* + \eta\kappa; \, \kappa=3/4,\, \eta=10$", alpha=0.5)
+    # n = 20
+    # k = 0.75
+    # cost_benefit = [(g-r)/(n*k*t) for t in tau]
+    # hazard_rate_eq = l/(1-exp(-l*n*k))
+    # equilibrium_tau = (g-r)/hazard_rate_eq
+    # axvline(x=equilibrium_tau, linewidth=1, color='k', linestyle='--',
+    #         label=r"Endogenous Burst Time: $\tau^* + \eta\kappa; \, \kappa=3/4,\, \eta=10$", alpha=0.5)
 
     # plot labels
     legend(loc='left')
     xlabel(r"Elapsed time since bubble began: $t - t_0$")
     ylabel(r"Waiting Time:  $\tau^* - \xi$")
     title(r"Degree of Preemption (reduction in waiting time)")
-    ylim(-30, 0)
+    ylim(-10, 0)
 
 
 
