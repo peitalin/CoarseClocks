@@ -145,40 +145,42 @@ def plot_figure1_price_path():
 
     from random import normalvariate
     color = ['dodgerblue', 'mediumorchid', 'palevioletred']
-    dtime = linspace(0, 2, 400)
+    dtime = linspace(0, 10, 1000)
     g = 0.15
     r = 0.05
+    v = volatility = 0.02
 
     price_mu = [exp((g-r)*t) for t in dtime]
-    price_random = [exp((g-r)*t) + rnorm(0, 0.01) for t in dtime]
+    price_random = [exp((g-r)*t) + rnorm(0, v) for t in dtime]
     plot(dtime, price_mu, color=color[0], linestyle='--', label=r"$p_t=e^{gt}$")
     plot(dtime, price_random, color=color[0], linestyle='-', linewidth=1, alpha=0.4)
 
     # (1 - (exp(-0.06) - exp(-0.15))) * exp(0.15)
     price_B_mu = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) for t in dtime]
-    price_B_random = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) + rnorm(0, 0.01) for t in dtime]
+    price_B_random = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) + rnorm(0, v) for t in dtime]
     plot(dtime, price_B_mu, color=color[2], linestyle='--', label=r"$(1-\beta(t-t_0)p_t$")
     plot(dtime, price_B_random, color=color[2], linestyle='-', linewidth=1, alpha=0.4)
 
     # before bubble
-    pretime = linspace(-1,0, 200)
+    pretime = linspace(-5,0, 500)
     preprice_mu = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) for t in pretime]
-    preprice_random = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) + rnorm(0, 0.01) for t in pretime]
+    preprice_random = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) + rnorm(0, v) for t in pretime]
     plot(pretime, preprice_mu, color=color[1], linestyle='--')
     plot(pretime, preprice_random, color=color[1], linestyle='-', linewidth=1, alpha=0.4)
 
     ylabel(r"$p_t$")
     xlabel("time")
 
-    text(1.55, 1.12, r"$p_t=e^{gt}$", fontsize='14')
-    text(1.55, 1.03, r"$(1-\beta(t-t_0)) p_t$", fontsize='14')
+    text(7, 1.8, r"$p_t=e^{gt}$", fontsize='14')
+    text(7, 1.2, r"$(1-\beta(t-t_0)) p_t$", fontsize='14')
     axvline(x=0, linewidth=1, color='k', linestyle='--',
             label=r"Bubble Start Time", alpha=0.5)
 
-# hazard_rates(l=1, n=1, linestyle='-')
-# hazard_rates(l=2, n=1, linestyle='--')
-# phis(l=1, n=1, linestyle='-')
-# phis(l=2, n=1, linestyle='--')
+
+
+
+
+
 def equilibrium_delay():
 
     r=0.05
