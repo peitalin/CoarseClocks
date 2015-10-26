@@ -1,0 +1,281 @@
+
+\documentclass[14pt]{article}
+\usepackage{amsmath}
+\usepackage{bbm}
+\usepackage{dsfont}
+\usepackage{setspace}\doublespacing
+% \numberwithin{equation}{subsection}
+\usepackage{fourier}
+\usepackage[T1]{fontenc}
+% this lets me rescale pmatrix
+\makeatletter
+\renewcommand*\env@matrix[1][\arraystretch]{%
+  \edef\arraystretch{#1}%
+  \hskip -\arraycolsep
+  \let\@ifnextchar\new@ifnextchar
+  \array{*\c@MaxMatrixCols c}}
+\makeatother
+% Do not remove
+
+\title{Title}
+\author{Your Name}
+
+
+\begin{document}
+
+
+
+
+
+\begin{align*}
+\Phi(t_0) = 1 - e^{- \lambda t_0} \\
+\beta (\cdot) : [0, \bar\tau] \rightarrow [0, \bar\beta] \\
+\Phi(t_0|t_i) = \frac{e^{\lambda \eta} - e^{\lambda(t_i - t_0)}}{e^{\lambda \eta} - 1} \\
+\Phi(t_0|t_i') \underset{FOSD}{\succ} \Phi(t_0|t_i) \;\;\;\; \forall t_i' > t_i \\
+T^*(t_0) = \text{min}\{T(t_0 + \eta \kappa), t_0 + \bar\tau\} \\
+T^*(t_0) = \text{inf}\{t | s(t, t_0) \ge \kappa \; \text{or} \; t = t_0 + \bar\tau\} \\
+\Pi (t | t_i) = \int_{T^*(t_0) < t} d\Phi(t_0|t_i) \\
+\int_{t_i}^{t} e^{-rs} [1 - \beta(s - T^{*-1}(s))] p(t) \; d\pi(s|t_i) \; + \; e^{-rt}p(t)[1-\Pi(t|t_i)]
+\end{align*}
+
+\begin{align*}
+h(t|t_i) &= \frac{\pi(t|t_i)}{1 - \Pi(t|t_i)} = \frac{g-r}{\beta(t - T^{*-1}(s))} \\
+h(t_i + \tau |t_i)&= \frac{\lambda}{1 - e^{-\lambda(\xi - \tau)}} = \frac{g-r}{\beta(\xi)} \\
+\tau = \xi - \frac{1}{\lambda} ln \left( \frac{g-r}{g-r-\lambda\beta(\xi)} \right) \\
+\xi = \text{min}\{\eta\kappa + \tau , \bar\tau \}
+\end{align*}
+
+\begin{align*}
+t_0 + \underbrace{\tau + \eta \kappa}_{\xi} < t_0 +  \underbrace{\bar\tau}_{\xi} \\
+h(t_i + \tau| t_i) = \frac{\lambda}{1-e^{-\lambda(\xi-\tau)}} = \frac{g-r}{\beta(\xi)} \\
+\frac{\lambda}{1-e^{-\lambda(\eta\kappa)}} \ge \frac{g-r}{\beta(\tau + \eta\kappa)} \\
+\tau^* = \beta^{-1} \left( \frac{g-r}{\lambda/(1-e^{-\lambda\eta\kappa})} \right) - \eta\kappa \\
+t_0 + \xi^* = t_o + \beta^{-1}\left( \frac{g-r}{\lambda/(1-e^{-\lambda\eta\kappa})}  \right) < t_0 + \bar\tau
+\end{align*}
+
+
+\begin{align*}
+\beta (t -t_0) = 1 - e^{-(g-r)(t-t_0)}
+\end{align*}
+
+
+
+
+%%% Lenders
+
+\begin{align}
+s(t, t_0) := \int_{t_0}^{min\{t, t_j + \eta\}} \sigma(t, t_j) \; dt_j \\
+\sigma( \cdot, t_j) : [0, t_j + \bar\tau] \rightarrow \{0, 1\} \\
+\sigma(\cdot, t_j) =
+\left\{
+    \begin{array}{ll}
+      0 & \forall t < T(t_j) \\
+      1 & \forall t \ge T(t_j)
+    \end{array}
+\right.
+\end{align}
+
+
+
+%"Nature" chooses a $t_0$. Let $\tilde t_0$ be a random start time for bubble and $\tilde t_j$ be a random awareness time uniformatly distributed on $[t_0, t_0 + \eta]$. The probability that $\tilde t_0 \le t_0$ is given by Baye's rule:
+
+\begin{align}
+Pr(\tilde t_0 \le t_0 | \tilde t_j &= t_j) = \frac{Pr(\tilde t_j = t_j | \tilde t_0 \le t_0) Pr(\tilde t_0 \le t_0)}{Pr(\tilde t_j = t_j)} \\
+&= \frac{
+    \int_0^{t_0} Pr(\tilde t_j = t_j | \tilde t_0 = t) Pr(\tilde t_0 = t) \; dt
+}
+{\int_0^{\infty} Pr(\tilde t_j = t_j | \tilde t_0 = t) Pr(\tilde t_0 = t) \; dt} \\
+Pr(\tilde t_j = t_j | \tilde t_0 = t)  &= \frac{1}{\eta} \; \;\;\; \text{if} \; t \in [t_j - \eta, t_j] \\
+&= \; 0 \; \;\;\;\; \text{otherwise} \\
+Pr(\tilde t_0 \le t_0 | \tilde t_j = t_j) &= \frac{\int_{t_j - \eta}^{t_o} \frac{1}{\eta} \lambda e^{-\lambda t} \; dt}{\int_{t_j - \eta}^{t_j} \frac{1}{\eta} \lambda e^{-\lambda t} \; dt} \\
+   &= \frac{
+e^{- \lambda (t_j - \eta)} - e^{- \lambda t_0 }
+}{
+e^{- \lambda (t_j - \eta)} - e^{- \lambda t_j }
+} \\
+Pr(\tilde t_0 \le t_0 | \tilde t_j = t_j) &=
+\frac{
+e^{\lambda\eta} - e^{- \lambda ( t_j - t_0) }
+}{
+e^{\lambda\eta} - 1
+} \\
+\end{align}
+
+\begin{align}
+Pr(\tilde t_0 \le t_0 | \tilde t_j = t_j) &= \Phi(t_0 | t_j) \\
+&= \int_{t_j - \eta}^{t_0} \phi(s|t_j) ds \\
+ &=
+\frac{
+e^{\lambda\eta} - e^{- \lambda ( t_j - t_0) }
+}{
+e^{\lambda\eta} - 1
+}
+\end{align}
+
+
+\begin{align}
+\Pi(t|t_j) = \int_{t_0 + \xi < t} d\Phi(t_0|t_i) = \Phi(t - \xi | t_j)
+\end{align}
+
+
+\begin{align}
+\Pi(t_j + \tau | t_j) &= \Phi(t_j + \tau - \xi | t_i) \\
+&=
+\frac{
+e^{\lambda\eta} - e^{- \lambda (t_j - (t_j + \tau - \xi)) }
+}{
+e^{\lambda\eta} - 1
+} \\
+&=
+\frac{
+e^{\lambda\eta} - e^{- \lambda (\xi - \tau) }
+}{
+e^{\lambda\eta} - 1
+}
+\end{align}
+
+\begin{align}
+\pi(t_j + \tau | t_j) = \frac{d}{dt} \left[ \frac{ e^{\lambda\eta} - e^{\lambda(\xi-\tau)}} {e^{\lambda \eta} - 1} \right] = \frac{\lambda e^{\lambda(\xi - \tau)}}{e^{\lambda \eta} - 1}
+\end{align}
+
+\begin{align}
+V(t) = \int_{t_j}^{t} e^{-(r-f)s} [1 - \beta(t - T^{*-1}(s))] p(s) d\pi(s|t_j) \; + \; e^{-(r-f)t} p(t) [1 - \Pi(t|t_j)]
+\end{align}
+
+\begin{align}
+\frac{d}{dt} V(t) = e^{t(g+f-r)} [1 - \beta(t - T^{*-1}(s))] \pi(s|t_j) \; + \; \frac{d}{dt} \left[ e^{t(g+f-r)} \; - \; \underbrace{e^{t(g+f-r)}}_f \underbrace{\Pi(t|t_j)}_g \right]
+\end{align}
+
+\begin{align}
+\frac{d}{dt} \left[e^{t(g+f-r)} \; - \; e^{t(g+f-r)} \Pi(t|t_j) \right] = (g+f-r) e^{t(g+f-r)} \; - \; (g+f-r) e^{t(g+f-r)} \Pi(t|t_j) \;+\; \pi(t|t_j) e^{t(g+f-r)}
+\end{align}
+
+
+\begin{align}
+\frac{d}{dt} V(t) &= e^{t(g+f-r)}[ 1 - \beta( \cdot )] \pi(t|t_j) \; + \; e^{t(g+f-r)}\left[(g+f-r)(1-\Pi(t|t_j) + \pi(t|t_j))\right] \\
+0 &= (g+f-r)(1 - \Pi(t|t_j)) - \beta( \cdot)
+\end{align}
+
+\begin{align}
+h(t|t_j) = \frac{\pi(t|t_j)}{1 - \Pi(t|t_j)} > \frac{g+f-r}{\beta(t - T^{*-1}(t))}
+\end{align}
+
+
+
+
+\begin{align}
+h(t_j + \tau| t_i) &= \frac{\lambda e^{(\xi - \tau)} / (e^{\lambda \eta} - 1)}
+{1 - \frac{e^{\lambda\eta} - e^{\lambda(\xi - \tau)}}{e^{\lambda \eta} - 1}} \\
+&= \frac{\lambda} {1 - e^{-\lambda(\xi - \tau)}}
+\end{align}
+
+
+
+
+
+\begin{align}
+\frac{\lambda} {1 - e^{-\lambda(\xi - \tau)}} &= \frac{g+f-r} {\beta (t - T^{*-1}(t))} \\
+\lambda \beta( \cdot ) &= (g + f -r)  - (g+f-r) e^{-\lambda(\xi - \tau )} \\
+(g+f-r)e^{-\lambda(\xi - \tau) } &= g+f-r - \lambda \beta( \cdot) \\
+\frac{g+f-r}{g+f-r-\lambda \beta( \cdot)} &= \frac{1}{e^{-\lambda(\xi - \tau) }} = e^{\lambda(\xi - \tau) } \\
+\tau^* &= \xi \; - \; \frac{1}{\lambda} ln \left(  \frac{g+f-r}{g+f-r-\lambda\beta(\cdot)} \right)
+\end{align}
+
+
+
+\begin{align}
+\Phi(\; \cdot \; | \Phi(t_0|t_i) \ge \alpha) \underset{FOSD}\succ \Phi(\; \cdot \; | \Phi(t_0|t_j) \ge \alpha) \\
+G(\; \cdot \; | G_y(Y) \ge \alpha) \underset{FOSD}\succ F(\; \cdot \; | F_x(X) \ge \alpha) \\
+F(\; \cdot \; | F_x(X) \le \alpha)  \underset{FOSD}\succ  G(\; \cdot \; | G_y(Y) \le \alpha)\\
+\end{align}
+
+
+\begin{align*}
+\lambda(t, N) &= \lambda_L [1- Pr(\lambda=\lambda_L | N(t)=n )] \; + \; \lambda_H Pr(\lambda=\lambda_H|N(t)=n) \\
+&=   \lambda_L + (\lambda_H - \lambda_L) Pr(\lambda=\lambda_H|N(t)=n) \\
+&=  \lambda_L + (\lambda_H - \lambda_L) \frac{ Pr(\lambda=\lambda_H) Pr(N(t)=n|\lambda=\lambda_H)} { Pr(\lambda=\lambda_H)Pr(N(t)=n|\lambda=\lambda_H) + Pr(\lambda=\lambda_L)Pr(N(t)=n|\lambda_L)   }
+\end{align*}
+
+
+\begin{align*}
+\lambda(t, N) &= \lambda_L [1- Pr(\lambda_L | N(t)=n )] \; + \; \lambda_H Pr(\lambda_H|N(t)=n) \\
+&=   \lambda_L + (\lambda_H - \lambda_L) Pr(\lambda_H|N(t)=n) \\
+&=  \lambda_L + (\lambda_H - \lambda_L) \frac{ Pr(\lambda_H) \cdot Pr(N(t)=n|\lambda_H)} { Pr(\lambda_H) \cdot Pr(N(t)=n|\lambda_H) + Pr(\lambda_L) \cdot Pr(N(t)=n|\lambda_L)   }
+\end{align*}
+
+
+\begin{align*}
+Pr(\lambda=\lambda_H) = \frac{\lambda(0) - \lambda_L} {\lambda_H - \lambda_L} \\
+Pr(\lambda=\lambda_L) = \frac{\lambda_H - \lambda(0)} {\lambda_H - \lambda_L}
+\end{align*}
+
+
+\begin{align*}
+\lambda(t,n) &= \lambda_L \;+\; \frac
+{
+    \frac{\lambda(0) - \lambda_L} {\lambda_H - \lambda_L} e^{-\lambda_H t}\frac{(\lambda_H t)^n}{n!}(\lambda_H - \lambda_L)
+}
+{
+    \frac{\lambda(0) - \lambda_L} {\lambda_H - \lambda_L} e^{-\lambda_H t}\frac{(\lambda_H t)^n}{n!} \;+\; \frac{\lambda_H - \lambda(0)} {\lambda_H - \lambda_L} e^{-\lambda_L t}\frac{(\lambda_L t)^n}{n!}
+} \\
+&= \lambda_L \;+\; \frac
+{\lambda_H - \lambda_L}
+{
+    1 \;+\; \frac{\lambda_H - \lambda(0)} {\lambda_H - \lambda_L} e^{[t(\lambda_H-\lambda_L) \;-\; n( ln(\lambda_H) - ln(\lambda_L)) ]}
+}
+\end{align*}
+
+
+
+\begin{align*}
+\frac{d}{df} \left[
+\xi - \frac{1}{\lambda} ln
+    \left(
+        \frac{g+f-r}{g+f-r-\lambda \beta(\cdot)}
+    \right)
+\right] = \frac{\beta(\cdot)}{(r-g-f)(\lambda\beta(\cdot) + r-g-f)}
+\end{align*}
+
+\begin{align*}
+\frac{d}{d\lambda} \left[
+\xi - \frac{1}{\lambda} ln
+    \left(
+        \frac{g+f-r}{g+f-r-\lambda \beta(\cdot)}
+    \right)
+\right] = - \frac{1}{\lambda^2}
+    \left(
+        \frac{\lambda\beta(\cdot)} {g+f-r-\lambda\beta(\cdot)} -
+        ln \left( \frac{g+f-r}{g+f-r-\lambda\beta(\cdot)}  \right)
+    \right)
+\end{align*}
+
+
+
+\begin{align*}
+\frac{d}{d\lambda} \left[
+\frac{1}{g+f-r} ln
+    \left(
+        \frac{\lambda}{\lambda - (g+f-r)(1-e^{\lambda\eta\kappa})}
+    \right) + \eta\kappa
+\right] = \frac{1}{\lambda}
+\frac{1 + \lambda\eta\kappa - e^{\lambda\eta\kappa}}
+{(g+f-r)(1 + e^{\lambda\eta\kappa})}
+\end{align*}
+
+
+
+\begin{equation*}
+\frac{d}{df} \left[
+\frac{1}{g+f-r} ln
+    \left(
+        \frac{\lambda}{\lambda - (g+f-r)(1-e^{\lambda\eta\kappa})}
+    \right) + \eta\kappa
+\right] = -\frac{1}{(g+f-r)^2} \left[ \frac{(g+f-r)(e^{-\lambda\eta\kappa} - 1)}{\lambda - (g+f-r)(1 - e^{-\lambda\eta\kappa})} -
+    ln\left(
+        \frac{\lambda}{\lambda - (g+f-r)(1 - e^{-\lambda\eta\kappa})}
+        \right) \right]
+\end{equation*}
+
+
+
+\end{document}
