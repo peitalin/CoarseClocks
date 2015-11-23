@@ -57,26 +57,22 @@ def phi(l, n, ti, t0):
     return top/bottom
 
 def hazard(l, n, ti, t0):
-    top = phi(l, n, ti, t0)
-    bottom = 1 - Phi(l, n, ti, t0)
-    return top/bottom
+    return phi(l, n, ti, t0) / (1 - Phi(l, n, ti, t0))
 
-def d_hazard(l, ti, t0):
-    top = l**2 * exp(-l*(ti-t0))
-    bot = (1 - exp(-l*(ti-t0)))**2
-    return top/bot
-
-def d_lamb(t, num, lp, h=2,l=1):
-    t, lp, h, l = map(Decimal, [t, lp, h, l])
-    num = Decimal(int(num))
-    top = exp((h-l)*t) * (h - l)**2 * (h - lp)
-    low = (h/l)**num * (lp - l)
-    bottom = low * (1 + (exp((h-l)*t) * (h - lp)) / low)**2
-    return top/bottom
+def reverse_hazard(l, n, ti, t0):
+    return phi(l, n, ti, t0) / Phi(l, n, ti, t0)
 
 
-def hazard_rates(l=1, n=1, linestyle='--', j=2):
 
+
+
+def hazard_rates(l=1, n=1, linestyle='-', j=2):
+
+    j=2
+    ti=1
+    n=1
+    l=0.1
+    linestyle='-'
     ltrue = [Decimal(1/10), Decimal(1/20), Decimal(1/100)]
     h, l = Decimal(1/10), Decimal(1/100)
     lprior = Decimal((h + l)/2)
@@ -84,7 +80,7 @@ def hazard_rates(l=1, n=1, linestyle='--', j=2):
     time = linspace(0, 5, 1000)  # t0 must be before ti
     tt = list(map(Decimal, linspace(ti-n, ti, 1001)))[:-1]
 
-
+    # time-varying lambda
     ll = [] # lambda
     # dll = [] # derivative of lambda
     for i, t in enumerate(time):
@@ -94,18 +90,97 @@ def hazard_rates(l=1, n=1, linestyle='--', j=2):
         ll.append(lambda_post)
         # dll.append(lambda_del)
 
-
+    # static lambda
     color = ['dodgerblue', 'mediumorchid', 'palevioletred']
-    for i, ti in enumerate([0.75, 1, 1.25]):
+    for i, l in enumerate([0.1, 0.3]):
 
-        tt = list(map(Decimal, linspace(ti-n, ti, 1001)))[:-1]
-        # t0 must be before ti
-        h = [hazard(Decimal(lt[0]), Decimal(n), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
-        dh = [d_hazard(Decimal(lt[0]), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
-        plot(tt, h, color=color[i], linestyle=linestyle, label=r"$\lambda$: {}, $t_i$: {}".format(l, ti))
+        tt = list(map(Decimal, linspace(ti-n, ti, 1001)))[1:-1] # t0 must be before ti
+        ll = [l]*len(time)
 
-    xlim(-0.5, 1.5)
-    ylim(0, 4)
+        # h = [hazard(Decimal(lt[0]), Decimal(n), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
+        # plot(tt, h, color=color[i], linestyle=linestyle, label=r"$\lambda$: {}, $t_i$: {}".format(l, ti))
+
+        rh = [reverse_hazard(Decimal(lt[0]), Decimal(n), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
+        plot(tt, rh, color=color[i], linestyle=linestyle, label=r"$\lambda$: {}, $t_i$: {}".format(l, ti))
+
+
+    ll = [1] * len(time)
+    phiL = [phi(Decimal(lt[0]), Decimal(n), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
+    PhiL = [Phi(Decimal(lt[0]), Decimal(n), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
+
+    ll = [3] * len(time)
+    phiH = [phi(Decimal(lt[0]), Decimal(n), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
+    PhiH = [Phi(Decimal(lt[0]), Decimal(n), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
+
+    # Reverse hazard rate dominance
+    RH_L = [p/P for p,P in zip(phiL,PhiL)]
+    RH_H = [p/P for p,P in zip(phiH,PhiH)]
+    plot(tt, RH_L, color=color[0], linestyle="--", label=r"$f_L(t)/F_L(t)$")
+    plot(tt, RH_H, color=color[1], linestyle="-", label=r"$f_H(t)/F_H(t)$")
+    ylim(0,6)
+    legend(prop={'size':14})
+
+    # Likelihood ratio dominance
+    likelihood_ratio = [l/h for l,h in zip(phiL, phiH)]
+    plot(tt, likelihood_ratio, color=color[1], linestyle="-", label=r"$\phi_L(t)/\phi_H(t)$")
+    legend(loc="bottom left", prop={'size':14})
+
+    # Hazard-rate dominance
+    HR_L = [p/(1-P) for p,P in zip(phiL,PhiL)]
+    HR_H = [p/(1-P) for p,P in zip(phiH,PhiH)]
+    plot(tt, HR_L, color=color[0], linestyle="--", label=r"$f_L(t)/(1 - F_L(t))$")
+    plot(tt, HR_H, color=color[1], linestyle="-", label=r"$f_H(t)/(1 - F_H(t))$")
+    ylim(0,6)
+    legend(loc='bottom right', prop={'size':14})
+
+    # Dispersive Order
+    DO_L = [phiL[i]-phiH[i] for i in range(len(phiL))]
+    plot(tt, DO_L, color=color[0], linestyle="--", label=r"$r(t_L) - t_L$")
+    legend(loc='bottom right', prop={'size':14})
+
+    # Star Order
+    SO_L = [phiL[i]/phiH[i] for i in range(len(phiL))]
+    plot(tt, SO_L, color=color[0], linestyle="--", label=r"$r(t_L)/t_L$")
+    legend(loc='bottom right', prop={'size':14})
+
+    # Convex Order
+    # r(t_l) is convex on S_L
+
+    # Virtual valuations
+    # "regular" if v - (1-F)/f is increasing in v
+    MR_L = [ (tt[i] - (1-PhiL[i])/phiL[i] ) for i in range(len(phiL))]
+    MR_H = [ (tt[i] - (1-PhiH[i])/phiH[i] ) for i in range(len(phiH)]
+    plot(tt, MR_L, color=color[0], linestyle="--", label=r"$ t_L - \frac{1-F_L(t)}{f_L(t)} $")
+    plot(tt, MR_H, color=color[1], linestyle="--", label=r"$ t_H - \frac{1-F_H(t)}{f_H(t)} $")
+    legend(loc='bottom right', prop={'size':14})
+
+
+    # Virtual costs
+    MC_L = [ (tt[i] + (PhiL[i])/phiL[i] ) for i in range(len(phiL))]
+    MC_H = [ (tt[i] + (PhiH[i])/phiH[i] ) for i in range(len(phiH))]
+    plot(tt, MR_L, color=color[0], linestyle="-", label=r"$ t_L + \frac{F_L(t)}{f_L(t)} $")
+    plot(tt, MR_H, color=color[1], linestyle="-", label=r"$ t_H + \frac{F_H(t)}{f_H(t)} $")
+    legend(loc='bottom right', prop={'size':14})
+
+
+    # Virtual Values: AB (2003)
+    def B(t, g=0.1, r=0.05):
+        return 1 - exp(-(Decimal(g)-Decimal(r))*t)
+
+    g,r = Decimal(0.1), Decimal(0.05)
+    VV_L = [ (B(tt[i])/(g-r) - (1-PhiL[i])/phiL[i] ) for i in range(len(phiL))]
+    VV_H = [ (B(tt[i])/(g-r) - (1-PhiH[i])/phiH[i] ) for i in range(len(phiH))]
+    plot(tt, MR_L, color=color[0], linestyle="-", label=r"$ \frac{B(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
+    plot(tt, MR_H, color=color[1], linestyle="-", label=r"$ \frac{B(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
+    legend(loc='bottom right', prop={'size':14})
+
+    VV_L = [ (B(tt[i])/(g-r) ) for i in range(len(phiL))]
+    VV_H = [ (B(tt[i])/(g-r) ) for i in range(len(phiH))]
+    plot(tt, MR_H, color=color[1], linestyle="-", label=r"$ \frac{B(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
+
+
+    xlim(0, 4)
+    ylim(0, 2)
     legend()
 
 
@@ -144,11 +219,12 @@ def phis(l=1, n=1, linestyle='--'):
 def plot_figure1_price_path():
 
     from random import normalvariate
+    rnorm = normalvariate
     color = ['dodgerblue', 'mediumorchid', 'palevioletred']
     dtime = linspace(0, 10, 1000)
     g = 0.15
     r = 0.05
-    v = volatility = 0.02
+    v = volatility = 0.025
 
     price_mu = [exp((g-r)*t) for t in dtime]
     price_random = [exp((g-r)*t) + rnorm(0, v) for t in dtime]
@@ -158,7 +234,7 @@ def plot_figure1_price_path():
     # (1 - (exp(-0.06) - exp(-0.15))) * exp(0.15)
     price_B_mu = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) for t in dtime]
     price_B_random = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) + rnorm(0, v) for t in dtime]
-    plot(dtime, price_B_mu, color=color[2], linestyle='--', label=r"$(1-\beta(t-t_0)p_t$")
+    plot(dtime, price_B_mu, color=color[2], linestyle='--', label=r"$(1-\beta(t-t_0))p_t$")
     plot(dtime, price_B_random, color=color[2], linestyle='-', linewidth=1, alpha=0.4)
 
     # before bubble
@@ -168,15 +244,20 @@ def plot_figure1_price_path():
     plot(pretime, preprice_mu, color=color[1], linestyle='--')
     plot(pretime, preprice_random, color=color[1], linestyle='-', linewidth=1, alpha=0.4)
 
+
     ylabel(r"$p_t$")
     xlabel("time")
+    xlim(-5,10)
 
     text(7, 1.8, r"$p_t=e^{gt}$", fontsize='14')
-    text(7, 1.2, r"$(1-\beta(t-t_0)) p_t$", fontsize='14')
+    text(7, 1.25, r"$(1-\beta(t-t_0)) p_t$", fontsize='14')
     axvline(x=0, linewidth=1, color='k', linestyle='--',
             label=r"Bubble Start Time", alpha=0.5)
+    axhline(y=0.2, xmin=1/3, xmax=2/3, linewidth=1, color='k', linestyle='-',
+            label=r"Bubble Start Time")
 
-
+    tick_params(axis='x', labelbottom='off')
+    tick_params(axis='y', labelleft='off')
 
 
 
@@ -197,21 +278,25 @@ def equilibrium_delay():
     color = ['dodgerblue', 'palevioletred', 'black']
     l = llow
     f = 0.0
+    assert l <= (g+f-r)
     plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
             label=r"$f={},\, \lambda={}$".format(f,l), linestyle='--', linewidth=1, color=color[0])
 
     l = lhigh
     f = 0.0
+    assert l <= (g+f-r)
     plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
             label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', linewidth=1, color=color[0])
 
     l = lhigh
     f = 0.01
+    assert l <= (g+f-r)
     plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
             label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', linewidth=1, color=color[1])
 
     l = lavg
     f = 0.0
+    assert l <= (g+f-r)
     plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
             label=r"$f={},\, \lambda={}$ (arbitraguer)".format(f,l), linestyle='-.', linewidth=1, color=color[2])
 
@@ -228,8 +313,8 @@ def equilibrium_delay():
     # plot labels
     legend(loc='left')
     xlabel(r"Elapsed time since bubble began: $t - t_0$")
-    ylabel(r"Waiting Time:  $\tau^* - \xi$")
-    title(r"Degree of Preemption (reduction in waiting time)")
+    ylabel(r"Waiting Time:  $\tau^*$")
+    title(r"Endogenous Waiting Times Before Exit")
     ylim(-10, 0)
 
 
@@ -246,15 +331,6 @@ def equilibrium_delay():
 
 
 
-# clock-games are isomorphic to a multi-unit reverse first price auction with a stochastic outside option.
-
-# wolfram comparative statics
-# d/df: swapped r with f
-# \xi - 1/\lambda * log((g+r-f) / (g+r-f-\lambda*B))
-
-# d/d\lambda
-# \xi - 1/x * log((g+f-r) / (g+f-r-x*B))
-# http://www.wolframalpha.com/input/?i=%5Cxi+-+1%2Fx+*+log%28%28g%2Bf-r%29+%2F+%28g%2Bf-r-x*B%29%29
 
 
 
@@ -278,38 +354,36 @@ def plot_lambdas():
     # (h-l) / (1 + ((h-o)/(o-l)) * exp((h-l)*t) * exp(-n*log(h/l)))
     from numpy.random import poisson
 
-    # j=0
+    # PICK j=1 or j=0
+    j=0
 
-    # ti=0
-    # n=1
-    # ltrue = [Decimal(1/10), Decimal(1/20), Decimal(1/200)]
-    # h, l = Decimal(1/10), Decimal(1/200)
-    # lprior = Decimal((h + l)/2)
-    # num = poisson(ltrue[j] , 1000)
-    # time = linspace(0, 10, 1000)  # t0 must be before ti
-    # tt = list(map(Decimal, linspace(ti-n, ti, 1001)))[:-1]
 
-    for i in range(150):
-        color = ['dodgerblue', 'palevioletred']
-        ltrue = [Decimal(1/2), Decimal(1/200)]
-        h, l = ltrue[0], ltrue[1]
-        # h, l = Decimal(1/10), Decimal(1/20)
-        lprior = Decimal((h + l)/2)
-    # Draw random samples
-        num = poisson(ltrue[j] , 1000)
-    # num = list(accumulate(num))
-        time = linspace(0, 5, 1000)  # t0 must be before ti
-    # yy = [lam(t,n) for t, n in zip(time, num)]
-    # effective hazard rate is num-obs/num-periods
+    ti=0
+    n=10
+    ltrue = [Decimal(0.2), Decimal(0.01)]
 
-        ll = []
-        for i, t in enumerate(time):
-            lambda_post = lam(time[i], num[i], lp=lprior, h=h, l=l)
-            lprior = lambda_post
-            ll.append(lambda_post)
+    for j in [1,0]:
+        for i in range(50):
+            color = ['dodgerblue', 'palevioletred']
+            # h, l = ltrue[0], ltrue[1]
+            h, l = Decimal(0.1), Decimal(0.02)
+            lprior = Decimal((h + l)/2)
+            # Draw random samples
+            num = poisson(ltrue[j] , n*100)
+            # num = list(accumulate(num))
+            time = linspace(0, n, n*100)  # t0 must be before ti
+            # yy = [lam(t,n) for t, n in zip(time, num)]
+            # effective hazard rate is num-obs/num-periods
 
-        plot(time, ll, color=color[j], alpha=0.1)
-    plot(time, ll, color=color[j], alpha=0.1, label=r'$\lambda={}$'.format(round(ltrue[j], 3)))
+            ll = []
+            for i, t in enumerate(time):
+                lambda_post = lam(t, num[i], lp=lprior, h=h, l=l)
+                lprior = lambda_post
+                ll.append(lambda_post)
+
+            plot(time, ll, color=color[j], alpha=0.1)
+        # plot for labelling purpose only
+        plot(time, ll, color=color[j], alpha=0.1, label=r'$\lambda={}$'.format(round(ltrue[j], 3)))
 
 
 # legend(); ylabel(r'$\lambda$'); xlabel('Time Periods'); title(r"Posterior Belief of $\lambda$")
@@ -321,6 +395,21 @@ def plot_lambdas():
 
 
 
+
+# clock-games are isomorphic to a multi-unit reverse first price auction with a stochastic outside option.
+
+# wolfram comparative statics
+# d/df: swapped r with f
+# \xi - 1/\lambda * log((g+r-f) / (g+r-f-\lambda*B))
+
+# d/d\lambda
+# \xi - 1/x * log((g+f-r) / (g+f-r-x*B))
+# http://www.wolframalpha.com/input/?i=%5Cxi+-+1%2Fx+*+log%28%28g%2Bf-r%29+%2F+%28g%2Bf-r-x*B%29%29
+
+
+# 1/(g+f-r) * log( x / (x - (g+f-r)(1 - e^(x*n*k))))
+
+# 1/(g+x-r) * log( l / (l - (g+x-r)(1 - e^(l*n*k))))
 
 
 
