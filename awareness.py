@@ -104,79 +104,126 @@ def hazard_rates(l=1, n=1, linestyle='-', j=2):
         plot(tt, rh, color=color[i], linestyle=linestyle, label=r"$\lambda$: {}, $t_i$: {}".format(l, ti))
 
 
-    ll = [1] * len(time)
+
+def asymmetric_auctions_plots():
+
+    j=2
+    ti=1
+    n=1
+    l=0.1
+    linestyle='-'
+    color = ['dodgerblue', 'mediumorchid', 'palevioletred', 'steelblue', 'seagreen']
+
+    tt = list(map(Decimal, linspace(ti-n, ti, 1001)))[:-1]
+    ttH = list(map(Decimal, linspace(ti-n+0.2, ti, 1001)))[:-1]
+
+    def f(t):
+        return phi(Decimal(1), Decimal(n), Decimal(ti), Decimal(t))
+
+    def F(t):
+        return Phi(Decimal(1), Decimal(n), Decimal(ti), Decimal(t))
+
+
+    ll = [1] * len(tt)
     phiL = [phi(Decimal(lt[0]), Decimal(n), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
     PhiL = [Phi(Decimal(lt[0]), Decimal(n), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
 
-    ll = [3] * len(time)
-    phiH = [phi(Decimal(lt[0]), Decimal(n), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
-    PhiH = [Phi(Decimal(lt[0]), Decimal(n), Decimal(ti), lt[1]) for lt in zip(ll,tt)]
+    ll = [5] * len(ttH)
+    phiH = [phi(Decimal(lt[0]), Decimal(n), Decimal(ti+0.2), lt[1]) for lt in zip(ll,ttH)]
+    PhiH = [Phi(Decimal(lt[0]), Decimal(n), Decimal(ti+0.2), lt[1]) for lt in zip(ll,ttH)]
 
-    # Reverse hazard rate dominance
-    RH_L = [p/P for p,P in zip(phiL,PhiL)]
-    RH_H = [p/P for p,P in zip(phiH,PhiH)]
-    plot(tt, RH_L, color=color[0], linestyle="--", label=r"$f_L(t)/F_L(t)$")
-    plot(tt, RH_H, color=color[1], linestyle="-", label=r"$f_H(t)/F_H(t)$")
-    ylim(0,6)
-    legend(prop={'size':14})
+    # # Reverse hazard rate dominance
+    # RH_L = [p/P for p,P in zip(phiL,PhiL)]
+    # RH_H = [p/P for p,P in zip(phiH,PhiH)]
+    # plot(tt, RH_L, color=color[0], linestyle="--", label=r"$f_L(t)/F_L(t)$")
+    # plot(tt, RH_H, color=color[1], linestyle="-", label=r"$f_H(t)/F_H(t)$")
+    # ylim(0,6)
+    # legend(prop={'size':14})
 
-    # Likelihood ratio dominance
-    likelihood_ratio = [l/h for l,h in zip(phiL, phiH)]
-    plot(tt, likelihood_ratio, color=color[1], linestyle="-", label=r"$\phi_L(t)/\phi_H(t)$")
-    legend(loc="bottom left", prop={'size':14})
+    # # Likelihood ratio dominance
+    # likelihood_ratio = [l/h for l,h in zip(phiL, phiH)]
+    # plot(tt, likelihood_ratio, color=color[1], linestyle="-", label=r"$\phi_L(t)/\phi_H(t)$")
+    # legend(loc="bottom left", prop={'size':14})
 
-    # Hazard-rate dominance
-    HR_L = [p/(1-P) for p,P in zip(phiL,PhiL)]
-    HR_H = [p/(1-P) for p,P in zip(phiH,PhiH)]
-    plot(tt, HR_L, color=color[0], linestyle="--", label=r"$f_L(t)/(1 - F_L(t))$")
-    plot(tt, HR_H, color=color[1], linestyle="-", label=r"$f_H(t)/(1 - F_H(t))$")
-    ylim(0,6)
-    legend(loc='bottom right', prop={'size':14})
+    # # Hazard-rate dominance
+    # HR_L = [p/(1-P) for p,P in zip(phiL,PhiL)]
+    # HR_H = [p/(1-P) for p,P in zip(phiH,PhiH)]
+    # plot(tt, HR_L, color=color[0], linestyle="--", label=r"$f_L(t)/(1 - F_L(t))$")
+    # plot(tt, HR_H, color=color[1], linestyle="-", label=r"$f_H(t)/(1 - F_H(t))$")
+    # ylim(0,6)
+    # legend(loc='bottom right', prop={'size':14})
 
-    # Dispersive Order
-    DO_L = [phiL[i]-phiH[i] for i in range(len(phiL))]
-    plot(tt, DO_L, color=color[0], linestyle="--", label=r"$r(t_L) - t_L$")
-    legend(loc='bottom right', prop={'size':14})
+    # # Dispersive Order
+    # DO_L = [phiL[i]-phiH[i] for i in range(len(phiL))]
+    # plot(tt, DO_L, color=color[0], linestyle="--", label=r"$r(t_L) - t_L$")
+    # legend(loc='bottom right', prop={'size':14})
 
-    # Star Order
-    SO_L = [phiL[i]/phiH[i] for i in range(len(phiL))]
-    plot(tt, SO_L, color=color[0], linestyle="--", label=r"$r(t_L)/t_L$")
-    legend(loc='bottom right', prop={'size':14})
+    # # Star Order
+    # SO_L = [phiL[i]/phiH[i] for i in range(len(phiL))]
+    # plot(tt, SO_L, color=color[0], linestyle="--", label=r"$r(t_L)/t_L$")
+    # legend(loc='bottom right', prop={'size':14})
 
-    # Convex Order
-    # r(t_l) is convex on S_L
+    # # Convex Order
+    # # r(t_l) is convex on S_L
 
-    # Virtual valuations
-    # "regular" if v - (1-F)/f is increasing in v
-    MR_L = [ (tt[i] - (1-PhiL[i])/phiL[i] ) for i in range(len(phiL))]
-    MR_H = [ (tt[i] - (1-PhiH[i])/phiH[i] ) for i in range(len(phiH)]
-    plot(tt, MR_L, color=color[0], linestyle="--", label=r"$ t_L - \frac{1-F_L(t)}{f_L(t)} $")
-    plot(tt, MR_H, color=color[1], linestyle="--", label=r"$ t_H - \frac{1-F_H(t)}{f_H(t)} $")
-    legend(loc='bottom right', prop={'size':14})
+    # # Virtual valuations
+    # # "regular" if v - (1-F)/f is increasing in v
+    # MR_L = [ (tt[i] - (1-PhiL[i])/phiL[i] ) for i in range(len(phiL))]
+    # MR_H = [ (tt[i] - (1-PhiH[i])/phiH[i] ) for i in range(len(phiH))]
+    # plot(tt, MR_L, color=color[0], linestyle="--", label=r"$ t_L - \frac{1-F_L(t)}{f_L(t)} $")
+    # plot(tt, MR_H, color=color[1], linestyle="--", label=r"$ t_H - \frac{1-F_H(t)}{f_H(t)} $")
+    # legend(loc='bottom right', prop={'size':14})
 
 
-    # Virtual costs
-    MC_L = [ (tt[i] + (PhiL[i])/phiL[i] ) for i in range(len(phiL))]
-    MC_H = [ (tt[i] + (PhiH[i])/phiH[i] ) for i in range(len(phiH))]
-    plot(tt, MR_L, color=color[0], linestyle="-", label=r"$ t_L + \frac{F_L(t)}{f_L(t)} $")
-    plot(tt, MR_H, color=color[1], linestyle="-", label=r"$ t_H + \frac{F_H(t)}{f_H(t)} $")
-    legend(loc='bottom right', prop={'size':14})
+    # # Virtual costs
+    # MC_L = [ (tt[i] + (PhiL[i])/phiL[i] ) for i in range(len(phiL))]
+    # MC_H = [ (tt[i] + (PhiH[i])/phiH[i] ) for i in range(len(phiH))]
+    # plot(tt, MR_L, color=color[0], linestyle="-", label=r"$ t_L + \frac{F_L(t)}{f_L(t)} $")
+    # plot(tt, MR_H, color=color[1], linestyle="-", label=r"$ t_H + \frac{F_H(t)}{f_H(t)} $")
+    # legend(loc='bottom right', prop={'size':14})
 
 
     # Virtual Values: AB (2003)
-    def B(t, g=0.1, r=0.05):
-        return 1 - exp(-(Decimal(g)-Decimal(r))*t)
+    def B(t, g=0.1, rf=0.05):
+        t = Decimal(t)
+        return 1 - exp(-(Decimal(g)-Decimal(rf))*t)
 
-    g,r = Decimal(0.1), Decimal(0.05)
-    VV_L = [ (B(tt[i])/(g-r) - (1-PhiL[i])/phiL[i] ) for i in range(len(phiL))]
-    VV_H = [ (B(tt[i])/(g-r) - (1-PhiH[i])/phiH[i] ) for i in range(len(phiH))]
-    plot(tt, MR_L, color=color[0], linestyle="-", label=r"$ \frac{B(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
-    plot(tt, MR_H, color=color[1], linestyle="-", label=r"$ \frac{B(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
+    g, rf = Decimal(1), Decimal(0.01)
+    J_L = [ (B(tt[i], g, rf)/(g-rf) - (1-PhiL[i])/phiL[i] ) for i in range(len(phiL))]
+    J_H = [ (B(tt[i], g, rf)/(g-rf) - (1-PhiH[i])/phiH[i] ) for i in range(len(phiH))]
+
+    plot(tt, J_L, color=color[0], linestyle="-", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
+    plot(tt, J_H, color=color[1], linestyle="-", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
+
+
+
+
+    def match(key_value, lookup_list, return_list):
+        "v -> v"
+        idx = np.abs(np.array(lookup_list) - Decimal(key_value)).argmin()
+        return return_list[idx]
+
+    def r(t):
+        # Takes a type_L and returns a type_H with the same rank/percentile
+        # t is a time/type in the PhiL distribution
+        return match(PhiL[tt.index(t)], PhiH, tt)
+
+
+    def k(t):
+        "J_H^-1 (J_L(t))"
+        return match(J_L[tt.index(t)], J_H, tt)
+
+
+    r_t = [r(t) for t in tt]
+    k_t = [k(t) for t in tt]
+
+    plot(tt,tt, color='black', alpha=0.2, label=r"$k_2(t)=t$")
+
+    plot(tt, J_L, color=color[0], linestyle="--", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
+    plot(tt, J_H, color=color[1], linestyle="--", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
+    plot(tt, r_t, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
+    plot(tt, k_t, color=color[3], linestyle="-", label=r"$k(t) = J_H^{-1}(J_L(t_L))$")
     legend(loc='bottom right', prop={'size':14})
-
-    VV_L = [ (B(tt[i])/(g-r) ) for i in range(len(phiL))]
-    VV_H = [ (B(tt[i])/(g-r) ) for i in range(len(phiH))]
-    plot(tt, MR_H, color=color[1], linestyle="-", label=r"$ \frac{B(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
 
 
     xlim(0, 4)
