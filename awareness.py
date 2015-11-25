@@ -189,6 +189,8 @@ def asymmetric_auctions_plots():
     # time = list(linspace(ti-n, ti)) # common support of times
     # ttH = list(linspace(ti-n, ti-0.1, 5001))[:-1]
 
+
+	# Vary difference in hazard rates to see difference in MR plots (information rents)
     hazrate = 2
     phiL = [phi(hazrate, n, ti, t) for t in tt]
     PhiL = [Phi(hazrate, n, ti, t) for t in tt]
@@ -228,7 +230,7 @@ def asymmetric_auctions_plots():
 
 
     plot(tt, tt, color='black', linestyle='--', alpha=0.4, label=r"$k_1(t)=t$")
-    plot(tt, ttH, color='black', alpha=0.5, label=r"$k_2(t)$")
+    # plot(tt, ttH, color='black', alpha=0.5, label=r"$k_2(t)$")
     # plot(tt, J_L, color=color[0], linestyle="--", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
     # plot(tt, J_H, color=color[1], linestyle="--", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
     plot(tt, r_t, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
