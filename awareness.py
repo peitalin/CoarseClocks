@@ -179,27 +179,39 @@ def asymmetric_auctions_plots():
     nH=0.8
     kappa=0.6
     # kappa=0.4
-
     tau = n * kappa
-    linestyle='-'
+    bartau = 99
+    epsilon = min(n*kappa, bartau)
     color = ['dodgerblue', 'mediumorchid', 'palevioletred', 'steelblue', 'seagreen']
 
-    tt  = list(linspace(t0, ti, 5001))[:-1]
-    ttH = list(linspace(t0-0.1, ti, 5001))[:-1]
-    # time = list(linspace(ti-n, ti)) # common support of times
-    # ttH = list(linspace(ti-n, ti-0.1, 5001))[:-1]
+    # Vary difference in hazard rates to see difference in MR plots (information rents)
+    hazrateL = 2
+    hazrateH = 4
+
+    # Distribution of bubble begin times: t0
+    tt0  = list(linspace(t0, ti, 5001))[:-1]
+    tt0H = list(linspace(t0-0.1, ti, 5001))[:-1]
+    # Bubble start time posteriors: Phi(t0|ti)
+    phiL = [phi(hazrateL, n, ti, t0) for t0 in tt0]
+    PhiL = [Phi(hazrateL, n, ti, t0) for t0 in tt0]
+
+    phiH = [phi(hazrateH, n, ti, t0) for t0 in tt0H]
+    PhiH = [Phi(hazrateH, n, ti, t0) for t0 in tt0H]
 
 
-	# Vary difference in hazard rates to see difference in MR plots (information rents)
-    hazrate = 2
-    phiL = [phi(hazrate, n, ti, t) for t in tt]
-    PhiL = [Phi(hazrate, n, ti, t) for t in tt]
+    # Burst Times
+    time = list(linspace(ti-n, ti)) # common support of times
+    timeH = list(linspace(ti-n, ti-0.1, 5001))[:-1]
+    # Burst time posteriors: F = Phi(ti + tau - epsilon|ti)
+    fL = [phi(hazrateL, n, ti, t0) for t0 in time]
+    FL = [Phi(hazrateL, n, ti, t0) for t0 in time]
 
-    hazrate = 4
-    phiH = [phi(hazrate, n, ti, t) for t in ttH]
-    PhiH = [Phi(hazrate, n, ti, t) for t in ttH]
+    fH = [phi(hazrateH, n, ti, t0) for t0 in timeH]
+    FH = [Phi(hazrateH, n, ti, t0) for t0 in timeH]
 
-    g, rf = 3, 0.1
+
+
+    g, rf = 3, 0.01
     B_  =  [ B(tt[i], g, rf, t0=t0) for i in range(len(phiL))]
     Bgr =  [ B(tt[i], g, rf, t0=t0)/(g-rf) for i in range(len(phiL))]
 
