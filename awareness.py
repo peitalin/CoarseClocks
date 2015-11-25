@@ -192,8 +192,8 @@ def asymmetric_auctions_plots():
 
     ti=1
     n=1
-    kappa=0.8
-    kappa=0.4
+    kappa=0.2
+    # kappa=0.4
 
     def tau_star(hazrate, g, rf):
         assert hazrate/(1-exp(-(hazrate*n*kappa))) > (g-rf)
@@ -203,14 +203,14 @@ def asymmetric_auctions_plots():
     def epsilon(tau, bartau=5):
         return min(n*kappa + tau, bartau)
 
-    def g_upper_bound(hazrate, rf):
+    def g_upper_bound(hazrate, rf, kappa=0.99):
         return hazrate/(1-exp(-(hazrate*n*kappa))) + rf - rf/100000
 
     rf = 0.01
     g = 2
     hazrateH = 1.5
     hazrateL = 1
-    assert g < g_upper_bound(hazrateL, rf)
+    assert g < g_upper_bound(hazrateL, rf, kappa)
 
     # Distribution of bubble begin times: t0
     t0 = ti-n
@@ -226,7 +226,10 @@ def asymmetric_auctions_plots():
 
     # burst times
     tau  = tau_star(hazrateL, g, rf)
-    tauH = tau_star(hazrateH, g, rf)
+    # tauH = tau_star(hazrateH, g, rf)
+    tauH = tau_star(hazrateH, g, rf) + tau
+    # Plus tau: arbitraguer sells out after tau periods, meaning lender only finds out
+    # about bubble rumor tau periods after the arbitrageur
 
     b0 = lambda tau: t0 + tau + n*kappa
     bi = lambda tau: ti + tau + n*kappa
@@ -250,8 +253,12 @@ def asymmetric_auctions_plots():
     J_L = [ ( B_L[i] - (1-FL[i])/fL[i] ) for i in range(len(fL))]
     J_H = [ ( B_H[i] - (1-FH[i])/fH[i] ) for i in range(len(fH))]
 
-    plot(btimes, J_L, color=color[0], linestyle="-", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
-    plot(btimes, J_H, color=color[1], linestyle="-", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
+
+    tt  = list(linspace(b0(tau), bi(tauH), 5001))[:-1]
+    # tt  = list(linspace(b0(tauH), bi(tauH), 5001))[:-1]
+    # Since support of burst times differ for tau and tauH
+    plot(tt, J_L, color=color[0], linestyle="-", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
+    plot(tt, J_H, color=color[1], linestyle="-", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
 
 
 
@@ -269,10 +276,7 @@ def asymmetric_auctions_plots():
     k_t = [k(t) for t in btimes]
 
 
-    tt  = list(linspace(b0(tau), bi(tauH), 5001))[:-1]
-    # Since support of burst times differ for tau and tauH
     plot(tt, tt, color='black', linestyle='--', alpha=0.4, label=r"$k_1(t)=t$")
-    # plot(tt, ttH, color='black', alpha=0.5, label=r"$k_2(t)$")
     # plot(tt, J_L, color=color[0], linestyle="--", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
     # plot(tt, J_H, color=color[1], linestyle="--", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
     plot(tt, r_t, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
