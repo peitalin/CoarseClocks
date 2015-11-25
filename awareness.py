@@ -44,7 +44,7 @@ def Phi(l, n, ti, t0):
     """ PHI(t_0 | t_i)
     l: lambda, n: awareness window, ti: agent's time, t0: time bubble began """
     # assert n > 0
-    # assert t0 <= ti <= t0 + n
+    assert t0 <= ti <= t0 + n
     top = exp(l*n) - exp(l*(ti - t0))
     bottom = exp(l*n) - 1
     return top/bottom
@@ -62,6 +62,22 @@ def hazard(l, n, ti, t0):
 def reverse_hazard(l, n, ti, t0):
     return phi(l, n, ti, t0) / Phi(l, n, ti, t0)
 
+
+def F(l, n, ti, t0):
+    """ PHI(t_0 | t_i)
+    l: lambda, n: awareness window, ti: agent's time, t0: time bubble began """
+    # assert n > 0
+    assert t0 <= ti <= t0 + n
+    top = exp(l*n) - exp(l*(ti - t0))
+    bottom = exp(l*n) - 1
+    return top/bottom
+
+def f(l, n, ti, t0):
+    "l: lambda, n: awareness window, ti: agent's time, t0: time bubble began"
+    assert n > 0
+    top = l*exp(l*(ti-t0))
+    bottom = exp(l*n) - 1
+    return top/bottom
 
 
 
@@ -162,6 +178,7 @@ def stochastic_dominance_plots():
 
 def asymmetric_auctions_plots():
 
+    color = ['dodgerblue', 'mediumorchid', 'palevioletred', 'steelblue', 'seagreen']
     # Virtual Values: AB (2003)
     def B(t, g, rf, t0=0):
         return 1 - exp( -(g-rf)*(t-t0) )
@@ -174,23 +191,31 @@ def asymmetric_auctions_plots():
 
 
     ti=1
-    t0=0 # t0 = ti-n
     n=1
-    nH=0.8
-    kappa=0.6
-    # kappa=0.4
-    tau = n * kappa
-    bartau = 99
-    epsilon = min(n*kappa, bartau)
-    color = ['dodgerblue', 'mediumorchid', 'palevioletred', 'steelblue', 'seagreen']
+    kappa=0.8
+    kappa=0.4
 
-    # Vary difference in hazard rates to see difference in MR plots (information rents)
-    hazrateL = 2
-    hazrateH = 4
+    def tau_star(hazrate, g, rf):
+        assert hazrate/(1-exp(-(hazrate*n*kappa))) > (g-rf)
+        # h(t) > (g-rf) otherwise nan (never crashes)
+        return 1/(g-rf) * log(hazrate/(hazrate - (g-rf)*(1-exp(-(hazrate*n*kappa))))) - n*kappa
+
+    def epsilon(tau, bartau=5):
+        return min(n*kappa + tau, bartau)
+
+    def g_upper_bound(hazrate, rf):
+        return hazrate/(1-exp(-(hazrate*n*kappa))) + rf - rf/100000
+
+    rf = 0.01
+    g = 2
+    hazrateH = 1.1
+    hazrateL = 1
+    assert g < g_upper_bound(hazrateL, rf)
 
     # Distribution of bubble begin times: t0
+    t0 = ti-n
     tt0  = list(linspace(t0, ti, 5001))[:-1]
-    tt0H = list(linspace(t0-0.1, ti, 5001))[:-1]
+    tt0H = list(linspace(t0, ti, 5001))[:-1]
     # Bubble start time posteriors: Phi(t0|ti)
     phiL = [phi(hazrateL, n, ti, t0) for t0 in tt0]
     PhiL = [Phi(hazrateL, n, ti, t0) for t0 in tt0]
@@ -199,48 +224,50 @@ def asymmetric_auctions_plots():
     PhiH = [Phi(hazrateH, n, ti, t0) for t0 in tt0H]
 
 
-    # Burst Times
-    time = list(linspace(ti-n, ti)) # common support of times
-    timeH = list(linspace(ti-n, ti-0.1, 5001))[:-1]
+    # burst times
+    tau  = tau_star(hazrateL, g)
+    tauH = tau_star(hazrateH, g)
+
+    btimes  = list(linspace(t0+tau +n*kappa, ti+tau+n*kappa, 5001))[:-1]
+    btimesH = list(linspace(t0+tauH+n*kappa, ti+tauH+n*kappa, 5001))[:-1]
     # Burst time posteriors: F = Phi(ti + tau - epsilon|ti)
-    fL = [phi(hazrateL, n, ti, t0) for t0 in time]
-    FL = [Phi(hazrateL, n, ti, t0) for t0 in time]
 
-    fH = [phi(hazrateH, n, ti, t0) for t0 in timeH]
-    FH = [Phi(hazrateH, n, ti, t0) for t0 in timeH]
+    fL = [f(hazrateL, n, ti+tau +n*kappa, t) for t in btimes]
+    FL = [F(hazrateL, n, ti+tau +n*kappa, t) for t in btimes]
 
+    fH = [f(hazrateH, n, ti+tauH+n*kappa, t) for t in btimesH]
+    FH = [F(hazrateH, n, ti+tauH+n*kappa, t) for t in btimesH]
 
+    plot(btimes, FL)
+    plot(btimesH, FH)
 
-    g, rf = 3, 0.01
-    B_  =  [ B(tt[i], g, rf, t0=t0) for i in range(len(phiL))]
-    Bgr =  [ B(tt[i], g, rf, t0=t0)/(g-rf) for i in range(len(phiL))]
-
-    def inv_B():
-        "B -> t - t0"
-        Bval = (1-exp(-l*n*kappa))/l * (g-rf)
-        return match(Bval, B_, tt)
+    Bgr =  [ B(btimes[i], g, rf, t0=t0)/(g-rf) for i in range(len(fL))]
 
 
-    J_L = [ ( Bgr[i] - (1-PhiL[i])/phiL[i] ) for i in range(len(phiL))]
-    J_H = [ ( Bgr[i] - (1-PhiH[i])/phiH[i] ) for i in range(len(phiH))]
+    J_L = [ ( Bgr[i] - (1-FL[i])/fL[i] ) for i in range(len(fL))]
+    J_H = [ ( Bgr[i] - (1-FH[i])/fH[i] ) for i in range(len(fH))]
 
-    plot(tt, J_L, color=color[0], linestyle="-", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
-    plot(tt, J_H, color=color[1], linestyle="-", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
+    plot(btimes, J_L, color=color[0], linestyle="-", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
+    plot(btimes, J_H, color=color[1], linestyle="-", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
+
+
 
 
     def r(t):
         # Takes a type_L and returns a type_H with the same rank/percentile
         # t is a time/type in the PhiL distribution
-        return match(PhiL[tt.index(t)], PhiH, tt)
+        return match(FL[btimes.index(t)], FH, btimesH)
 
     def k(t):
         "J_H^-1 (J_L(t))"
-        return match(J_L[tt.index(t)], J_H, tt)
+        return match(J_L[btimes.index(t)], J_H, btimesH)
 
-    r_t = [r(t) for t in tt]
-    k_t = [k(t) for t in tt]
+    r_t = [r(t) for t in btimes]
+    k_t = [k(t) for t in btimes]
 
 
+    tt  = list(linspace(t0+tau +n*kappa, ti+tauH+n*kappa, 5001))[:-1]
+    # Since support of burst times differ for tau and tauH
     plot(tt, tt, color='black', linestyle='--', alpha=0.4, label=r"$k_1(t)=t$")
     # plot(tt, ttH, color='black', alpha=0.5, label=r"$k_2(t)$")
     # plot(tt, J_L, color=color[0], linestyle="--", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
