@@ -190,8 +190,9 @@ def asymmetric_auctions_plots():
 
 
 
+    nobs=1000
     ti=1
-    n=1
+    n=2
     kappa=0.2
     # kappa=0.4
 
@@ -200,61 +201,66 @@ def asymmetric_auctions_plots():
         # h(t) > (g-rf) otherwise nan (never crashes)
         return 1/(g-rf) * log(hazrate/(hazrate - (g-rf)*(1-exp(-(hazrate*n*kappa))))) - n*kappa
 
-    def epsilon(tau, bartau=5):
-        return min(n*kappa + tau, bartau)
-
     def g_upper_bound(hazrate, rf, kappa=0.99):
         return hazrate/(1-exp(-(hazrate*n*kappa))) + rf - rf/100000
 
     rf = 0.01
-    g = 2
-    hazrateH = 1.5
+    g = 3
+    hazrateH = 2
     hazrateL = 1
+    g = g_upper_bound(hazrateL, rf, kappa) - 0.1
     assert g < g_upper_bound(hazrateL, rf, kappa)
 
-    # Distribution of bubble begin times: t0
+    # ## Distribution of bubble begin times: t0
     t0 = ti-n
-    tt0  = list(linspace(t0, ti, 5001))[:-1]
-    tt0H = list(linspace(t0, ti, 5001))[:-1]
-    # Bubble start time posteriors: Phi(t0|ti)
-    phiL = [phi(hazrateL, n, ti, t0) for t0 in tt0]
-    PhiL = [Phi(hazrateL, n, ti, t0) for t0 in tt0]
+    tt0L = list(linspace(t0, ti, nobs+1))[:-1]
+    tt0H = list(linspace(t0, ti, nobs+1))[:-1]
+    ## Bubble start time posteriors: Phi(t0|ti)
+    phiL = [phi(hazrateL, n, ti, t0) for t0 in tt0L]
+    PhiL = [Phi(hazrateL, n, ti, t0) for t0 in tt0L]
 
     phiH = [phi(hazrateH, n, ti, t0) for t0 in tt0H]
     PhiH = [Phi(hazrateH, n, ti, t0) for t0 in tt0H]
 
 
     # burst times
-    tau  = tau_star(hazrateL, g, rf)
+    tauL = tau_star(hazrateL, g, rf)
     # tauH = tau_star(hazrateH, g, rf)
-    tauH = tau_star(hazrateH, g, rf) + tau
+    tauH = tau_star(hazrateH, g, rf) + tauL
     # Plus tau: arbitraguer sells out after tau periods, meaning lender only finds out
     # about bubble rumor tau periods after the arbitrageur
 
     b0 = lambda tau: t0 + tau + n*kappa
     bi = lambda tau: ti + tau + n*kappa
 
-    btimes  = list(linspace(b0(tau) , bi(tau) , 5001))[:-1]
-    btimesH = list(linspace(b0(tauH), bi(tauH), 5001))[:-1]
+    btimesL = list(linspace(b0(tauL), bi(tauL) , nobs+1))[:-1]
+    btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
     # Burst time posteriors: F = Phi(ti + tau - epsilon|ti)
 
-    fL = [f(hazrateL, n, bi(tau), t) for t in btimes]
-    FL = [F(hazrateL, n, bi(tau), t) for t in btimes]
+    fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
+    FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
 
     fH = [f(hazrateH, n, bi(tauH), t) for t in btimesH]
     FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
 
-    # plot(btimes, FL)
-    # plot(btimesH, FH)
-    B_L =  [ B(btimes[i], g, rf, t0=t0)/(g-rf) for i in range(len(fL))]
-    B_H =  [ B(btimesH[i], g, rf, t0=t0)/(g-rf) for i in range(len(fH))]
 
+    if False:
+        # Awareness distributions share the same support however, the posterior burst distributions do not
+        plot(btimesL, FL, label=r"$F_L$")
+        plot(btimesH, FH, label=r"$F_H$")
+        plot(tt0L, PhiL, label=r"$\Phi_L$")
+        plot(tt0H, PhiH, label=r"$\Phi_L$")
+        legend()
+
+
+    B_L =  [ B(btimesL[i], g, rf, t0=t0)/(g-rf) for i in range(len(fL))]
+    B_H =  [ B(btimesH[i], g, rf, t0=t0)/(g-rf) for i in range(len(fH))]
 
     J_L = [ ( B_L[i] - (1-FL[i])/fL[i] ) for i in range(len(fL))]
     J_H = [ ( B_H[i] - (1-FH[i])/fH[i] ) for i in range(len(fH))]
 
 
-    tt  = list(linspace(b0(tau), bi(tauH), 5001))[:-1]
+    tt = list(linspace(b0(tauL), bi(tauH), nobs+1))[:-1]
     # tt  = list(linspace(b0(tauH), bi(tauH), 5001))[:-1]
     # Since support of burst times differ for tau and tauH
     plot(tt, J_L, color=color[0], linestyle="-", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
@@ -262,18 +268,17 @@ def asymmetric_auctions_plots():
 
 
 
-
     def r(t):
         # Takes a type_L and returns a type_H with the same rank/percentile
         # t is a time/type in the PhiL distribution
-        return match(FL[btimes.index(t)], FH, btimesH)
+        return match(FL[btimesL.index(t)], FH, btimesH)
 
     def k(t):
         "J_H^-1 (J_L(t))"
-        return match(J_L[btimes.index(t)], J_H, btimesH)
+        return match(J_L[btimesL.index(t)], J_H, btimesH)
 
-    r_t = [r(t) for t in btimes]
-    k_t = [k(t) for t in btimes]
+    r_t = [r(t) for t in btimesL]
+    k_t = [k(t) for t in btimesL]
 
 
     plot(tt, tt, color='black', linestyle='--', alpha=0.4, label=r"$k_1(t)=t$")
@@ -286,6 +291,10 @@ def asymmetric_auctions_plots():
     xlabel(r"Low-hazard types: $t_L$")
     ylabel(r"High-hazard types: $t_H$")
     title(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $k(t) = J_H^{-1}(J_L(t_L))$")
+
+
+    xlim(btimesL[0], btimesL[-1])
+    ylim(btimesH[0], btimesH[-1])
 
 
 
