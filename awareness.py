@@ -182,7 +182,9 @@ def asymmetric_auctions_plots():
     color = ['dodgerblue', 'mediumorchid', 'palevioletred', 'steelblue', 'seagreen']
     # Virtual Values: AB (2003)
     def B(t, g, rf, t0=0):
-        return 1 - exp( -(g-rf)*(t-t0) )
+        bubble = 1 - exp( -(g-rf)*(t-t0) )
+        assert bubble <= 1
+        return bubble
 
     def match(key_value, lookup_list, return_list):
         "v -> v"
@@ -192,9 +194,9 @@ def asymmetric_auctions_plots():
 
 
     nobs=1000
-    ti=1
+    ti=10
     n=10
-    kappa=0.2
+    kappa=0.6
     # kappa=0.4
 
     def tau_star(hazrate, g, rf):
@@ -205,10 +207,10 @@ def asymmetric_auctions_plots():
     def g_upper_bound(hazrate, rf, kappa=0.99):
         return hazrate/(1-exp(-(hazrate*n*kappa))) + rf - rf/100000
 
-    rf = 0.05
-    g = .3
-    hazrateH = .2
-    hazrateL = .1
+    rf = 0.01
+    g = .12
+    hazrateH = .1
+    hazrateL = .05
     # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
     assert g < g_upper_bound(hazrateL, rf, kappa)
 
@@ -254,11 +256,11 @@ def asymmetric_auctions_plots():
         legend()
 
 
-    B_L =  [ B(btimesL[i], g, rf, t0=t0)/(g-rf) for i in range(len(fL))]
-    B_H =  [ B(btimesH[i], g, rf, t0=t0)/(g-rf) for i in range(len(fH))]
+    B_L =  [ B(btimesL[i], g, rf, t0=t0) for i in range(len(fL))]
+    B_H =  [ B(btimesH[i], g, rf, t0=t0) for i in range(len(fH))]
 
-    J_L = [ ( B_L[i] - (1-FL[i])/fL[i] ) for i in range(len(fL))]
-    J_H = [ ( B_H[i] - (1-FH[i])/fH[i] ) for i in range(len(fH))]
+    J_L = [ ( B_L[i]/(g-rf) - (1-FL[i])/fL[i] ) for i in range(len(fL))]
+    J_H = [ ( B_H[i]/(g-rf) - (1-FH[i])/fH[i] ) for i in range(len(fH))]
 
 
     plot(btimesL, J_L, color=color[0], linestyle="-", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
@@ -280,11 +282,22 @@ def asymmetric_auctions_plots():
     k_t = [k(t) for t in btimesL]
 
 
-    plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$k_1(t)=t$")
+    plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.2, label=r"$k_1(t)=t$")
     # plot(tt, J_L, color=color[0], linestyle="--", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
     # plot(tt, J_H, color=color[1], linestyle="--", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
-    plot(btimesL, r_t, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
-    plot(btimesL, k_t, color=color[3], linestyle="-", label=r"$k(t) = J_H^{-1}(J_L(t_L))$")
+    plot(r_t, btimesL, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
+    plot(k_t, btimesL, color=color[3], linestyle="-", label=r"$k(t) = J_H^{-1}(J_L(t_L))$")
+
+
+    " plot t_l on the x-axis"
+    # plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$k_1(t)=t$")
+    # # plot(tt, J_L, color=color[0], linestyle="--", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
+    # # plot(tt, J_H, color=color[1], linestyle="--", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
+    # plot(btimesL, r_t, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
+    # plot(btimesL, k_t, color=color[3], linestyle="-", label=r"$k(t) = J_H^{-1}(J_L(t_L))$")
+    # xlim(btimesL[0], btimesL[-1])
+    # ylim(btimesH[0], btimesH[-1])
+
 
     legend(loc='bottom right', prop={'size':14})
     xlabel(r"Low-hazard types: $t_L$")
@@ -292,8 +305,8 @@ def asymmetric_auctions_plots():
     title(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $k(t) = J_H^{-1}(J_L(t_L))$")
 
 
-    xlim(btimesL[0], btimesL[-1])
-    ylim(btimesH[0], btimesH[-1])
+    xlim(btimesH[0], btimesH[-1])
+    ylim(btimesL[0], btimesL[-1])
 
 
 
