@@ -66,8 +66,8 @@ def reverse_hazard(l, n, ti, t0):
 def F(l, n, ti, t0):
     """ PHI(t_0 | t_i)
     l: lambda, n: awareness window, ti: agent's time, t0: time bubble began """
-    if not (t0 <= ti <= t0 + n):
-        raise(AssertionError("t0: {} <= ti: {} <= t0+n: {}".format(t0, ti, t0+n)))
+    if not round(t0+n - ti, 5) <= 0:
+        raise(AssertionError("ti: {} <= t0+n: {}".format(t0, ti, t0+n)))
     top = exp(l*n) - exp(l*(ti - t0))
     bottom = exp(l*n) - 1
     return top/bottom
@@ -191,8 +191,8 @@ def asymmetric_auctions_plots():
 
 
     nobs=1000
-    ti=20
-    n=20
+    ti=1
+    n=10
     kappa=0.2
     # kappa=0.4
 
