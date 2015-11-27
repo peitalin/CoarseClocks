@@ -180,7 +180,7 @@ def stochastic_dominance_plots():
 def asymmetric_auctions_plots():
 
     color = ['dodgerblue', 'mediumorchid', 'palevioletred', 'steelblue', 'seagreen']
-    # Virtual Values: AB (2003)
+
     def B(t, g, rf, t0=0):
         bubble = 1 - exp( -(g-rf)*(t-t0) )
         assert bubble <= 1
@@ -191,80 +191,92 @@ def asymmetric_auctions_plots():
         idx = np.abs(np.array(lookup_list) - key_value).argmin()
         return return_list[idx]
 
-
-
-    nobs=1000
-    ti=10
-    n=10
-    kappa=0.6
-    # kappa=0.4
-
     def tau_star(hazrate, g, rf):
         assert hazrate/(1-exp(-(hazrate*n*kappa))) > (g-rf)
         # h(t) > (g-rf) otherwise nan (never crashes)
         return 1/(g-rf) * log(hazrate/(hazrate - (g-rf)*(1-exp(-(hazrate*n*kappa))))) - n*kappa
 
-    def g_upper_bound(hazrate, rf, kappa=0.99):
+    def g_upper_bound(hazrate, rf, kappa):
         return hazrate/(1-exp(-(hazrate*n*kappa))) + rf - rf/100000
 
-    rf = 0.01
-    g = .12
-    hazrateH = .1
-    hazrateL = .05
-    # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
-    assert g < g_upper_bound(hazrateL, rf, kappa)
-
-    # ## Distribution of bubble begin times: t0
-    t0 = ti-n
-    tt0L = list(linspace(t0, ti, nobs+1))[:-1]
-    tt0H = list(linspace(t0, ti, nobs+1))[:-1]
-    ## Bubble start time posteriors: Phi(t0|ti)
-    phiL = [phi(hazrateL, n, ti, t0) for t0 in tt0L]
-    PhiL = [Phi(hazrateL, n, ti, t0) for t0 in tt0L]
-
-    phiH = [phi(hazrateH, n, ti, t0) for t0 in tt0H]
-    PhiH = [Phi(hazrateH, n, ti, t0) for t0 in tt0H]
 
 
-    # burst times
-    tauL = tau_star(hazrateL, g, rf)
-    tauH = tau_star(hazrateH, g, rf)
-    # tauH = tau_star(hazrateH, g, rf) + tauL
-    # Plus tau: arbitraguer sells out after tau periods, meaning lender only finds out
-    # about bubble rumor tau periods after the arbitrageur
+    alphas = [0.4, 0.6, 0.8]
+    n_params = [15, 30, 45]
+    k_params = [0.20, 0.50, 0.80]
 
-    b0 = lambda tau: t0 + tau + n*kappa
-    bi = lambda tau: ti + tau + n*kappa
+    for alpha, kappa in zip(alphas, k_params):
 
-    btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
-    btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
-    # Burst time posteriors: F = Phi(ti + tau - epsilon|ti)
+        nobs=1000
+        ti=n
+        # n=25
+        # kappa=0.7
+        # kappa=0.4
 
-    fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
-    FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
+        rf = 0.02
+        g = .12
+        hazrateH = .2
+        hazrateL = .1
+        # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
+        assert g < g_upper_bound(hazrateL, rf, kappa)
 
-    fH = [f(hazrateH, n, bi(tauH), t) for t in btimesH]
-    FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
+        # ## Distribution of bubble begin times: t0
+        t0 = ti-n
+        tt0L = list(linspace(t0, ti, nobs+1))[:-1]
+        tt0H = list(linspace(t0, ti, nobs+1))[:-1]
+        ## Bubble start time posteriors: Phi(t0|ti)
+        phiL = [phi(hazrateL, n, ti, t0) for t0 in tt0L]
+        PhiL = [Phi(hazrateL, n, ti, t0) for t0 in tt0L]
 
-
-    if False:
-        # Awareness distributions share the same support however, the posterior burst distributions do not
-        plot(btimesL, FL, label=r"$F_L$")
-        plot(btimesH, FH, label=r"$F_H$")
-        plot(tt0L, PhiL, label=r"$\Phi_L$")
-        plot(tt0H, PhiH, label=r"$\Phi_L$")
-        legend()
-
-
-    B_L =  [ B(btimesL[i], g, rf, t0=t0) for i in range(len(fL))]
-    B_H =  [ B(btimesH[i], g, rf, t0=t0) for i in range(len(fH))]
-
-    J_L = [ ( B_L[i]/(g-rf) - (1-FL[i])/fL[i] ) for i in range(len(fL))]
-    J_H = [ ( B_H[i]/(g-rf) - (1-FH[i])/fH[i] ) for i in range(len(fH))]
+        phiH = [phi(hazrateH, n, ti, t0) for t0 in tt0H]
+        PhiH = [Phi(hazrateH, n, ti, t0) for t0 in tt0H]
 
 
-    plot(btimesL, J_L, color=color[0], linestyle="-", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
-    plot(btimesL, J_H, color=color[1], linestyle="-", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
+        # burst times
+        tauL = tau_star(hazrateL, g, rf)
+        # tauH = tau_star(hazrateH, g, rf)
+        tauH = tau_star(hazrateH, g, rf) + tauL
+        # Plus tau: arbitraguer sells out after tau periods, meaning lender only finds out
+        # about bubble rumor tau periods after the arbitrageur
+
+        b0 = lambda tau: t0 + tau + n*kappa
+        bi = lambda tau: ti + tau + n*kappa
+
+        btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
+        btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
+        # Burst time posteriors: F = Phi(ti + tau - epsilon|ti)
+
+        fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
+        FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
+
+        fH = [f(hazrateH, n, bi(tauH), t) for t in btimesH]
+        FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
+
+
+        if False:
+            # Awareness distributions share the same support however, the posterior burst distributions do not
+            plot(btimesL, FL, label=r"$F_L$")
+            plot(btimesH, FH, label=r"$F_H$")
+            plot(tt0L, PhiL, label=r"$\Phi_L$")
+            plot(tt0H, PhiH, label=r"$\Phi_L$")
+            legend()
+
+
+        B_L =  [ B(btimesL[i], g, rf, t0=t0) for i in range(len(fL))]
+        B_H =  [ B(btimesH[i], g, rf, t0=t0) for i in range(len(fH))]
+
+        J_L = [ ( B_L[i]/(g-rf) - (1-FL[i])/fL[i] ) for i in range(len(fL))]
+        J_H = [ ( B_H[i]/(g-rf) - (1-FH[i])/fH[i] ) for i in range(len(fH))]
+
+
+        plot(btimesL, J_L, color=color[0], alpha=alpha, linestyle="-",
+                label=r"$type:t_L, \kappa:{}, \eta:{}$".format(kappa, n))
+        plot(btimesL, J_H, color=color[1], alpha=alpha, linestyle="-",
+                label=r"$type:t_H, \kappa:{}, \eta:{}$".format(kappa, n))
+        xlabel("Price Burst Times")
+        ylabel(r"Virtual Valuation: $J(t)$")
+        title(r"Virtual Valuations: $J_L(t_L)= \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)}$")
+        legend(loc="bottom right")
 
 
 
@@ -282,22 +294,28 @@ def asymmetric_auctions_plots():
     k_t = [k(t) for t in btimesL]
 
 
+
+    plt.subplots(1,2)
+    "Plot t_H types on the x-axis"
     plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.2, label=r"$k_1(t)=t$")
-    # plot(tt, J_L, color=color[0], linestyle="--", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
-    # plot(tt, J_H, color=color[1], linestyle="--", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
     plot(r_t, btimesL, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
     plot(k_t, btimesL, color=color[3], linestyle="-", label=r"$k(t) = J_H^{-1}(J_L(t_L))$")
+    xlim(btimesH[0], btimesH[-1])
+    ylim(btimesL[0], btimesL[-1])
+
+    legend(loc='bottom right', prop={'size':14})
+    ylabel(r"Low-hazard types: $t_L$")
+    xlabel(r"High-hazard types: $t_H$")
+    title(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $k(t) = J_H^{-1}(J_L(t_L))$")
 
 
-    " plot t_l on the x-axis"
-    # plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$k_1(t)=t$")
-    # # plot(tt, J_L, color=color[0], linestyle="--", label=r"$ \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)} $")
-    # # plot(tt, J_H, color=color[1], linestyle="--", label=r"$ \frac{\beta(t_H - t_0)}{g-r} - \frac{1-F_H(t)}{f_H(t)} $")
-    # plot(btimesL, r_t, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
-    # plot(btimesL, k_t, color=color[3], linestyle="-", label=r"$k(t) = J_H^{-1}(J_L(t_L))$")
-    # xlim(btimesL[0], btimesL[-1])
-    # ylim(btimesH[0], btimesH[-1])
 
+    "Plot t_l on the x-axis"
+    plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$k_1(t)=t$")
+    plot(btimesL, r_t, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
+    plot(btimesL, k_t, color=color[3], linestyle="-", label=r"$k(t) = J_H^{-1}(J_L(t_L))$")
+    xlim(btimesL[0], btimesL[-1])
+    ylim(btimesH[0], btimesH[-1])
 
     legend(loc='bottom right', prop={'size':14})
     xlabel(r"Low-hazard types: $t_L$")
@@ -305,8 +323,6 @@ def asymmetric_auctions_plots():
     title(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $k(t) = J_H^{-1}(J_L(t_L))$")
 
 
-    xlim(btimesH[0], btimesH[-1])
-    ylim(btimesL[0], btimesL[-1])
 
 
 
