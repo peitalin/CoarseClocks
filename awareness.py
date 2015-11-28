@@ -216,7 +216,7 @@ def asymmetric_auctions_plots():
 
 
     alphas = [0.4, 0.6, 0.8]
-    n_params = [15, 25, 35]
+    n_params = [15, 20, 25]
 
     for alpha, n in zip(alphas, n_params):
 
@@ -411,7 +411,7 @@ def degree_of_preemption():
 
     rf=0.02
     g=0.17
-    f=0
+    fee=0
     xis = linspace(0, 20, 1000)
     lhigh = 0.15
     llow  = 0.10
@@ -427,25 +427,25 @@ def degree_of_preemption():
 
 
     # for a given crash date (xi), arbitrageur hastens his sellout time by preemptime(xi)
-    preemptime = lambda xi: -1/l * log((g+f-r)/(g+f-r-l*B(xi, g, rf)))
+    preemptime = lambda xi: -1/l * log((g+fee-r)/(g+fee-r-l*B(xi, g, rf)))
 
     l = llow
-    f = 0.0
+    fee = 0.0
     plot(xis, list(map(preemptime, xis)),
             label=r"$f={},\, \lambda={}$".format(f,l), linestyle='--', linewidth=1, color=color[0])
 
     l = lhigh
-    f = 0.0
+    fee = 0.0
     plot(xis, list(map(preemptime, xis)),
             label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', linewidth=1, color=color[0])
 
     l = lhigh
-    f = 0.01
+    fee = 0.01
     plot(xis, list(map(preemptime, xis)),
             label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', linewidth=1, color=color[1])
 
     l = lavg
-    f = 0.0
+    fee = 0.0
     plot(xis, list(map(preemptime, xis)),
             label=r"$f={},\, \lambda={}$ (arbitraguer)".format(f,l), linestyle='-.', linewidth=1, color=color[2])
 
