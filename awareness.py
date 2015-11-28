@@ -182,12 +182,13 @@ def asymmetric_auctions_plots():
     color = ['dodgerblue', 'mediumorchid', 'palevioletred', 'steelblue', 'seagreen']
 
     def B(t, g, rf, t0=0):
+        "Bubble component of price (fraction)"
         bubble = 1 - exp( -(g-rf)*(t-t0) )
         assert bubble <= 1
         return bubble
 
     def match(key_value, lookup_list, return_list):
-        "v -> v"
+        "v_L -> v_H"
         idx = np.abs(np.array(lookup_list) - key_value).argmin()
         return return_list[idx]
 
@@ -197,21 +198,33 @@ def asymmetric_auctions_plots():
         return 1/(g-rf) * log(hazrate/(hazrate - (g-rf)*(1-exp(-(hazrate*n*kappa))))) - n*kappa
 
     def g_upper_bound(hazrate, rf, kappa):
+        "Returns max growth rate for endogenous crash, otherwise diverges"
         return hazrate/(1-exp(-(hazrate*n*kappa))) + rf - rf/100000
+
+    def r(t, btimesL, btimesH):
+        "Match type t_L with t_H of same rank in F_H (CDF of burst times)"
+        # Takes a type_L and returns a type_H with the same rank/percentile
+        # t is a time/type in the PhiL distribution
+        return match(FL[btimesL.index(t)], FH, btimesH)
+
+    def k(t, btimesL, btimesH):
+        "Match type t_L with t_H with same virtual valuation"
+        "J_H^-1 (J_L(t))"
+        return match(J_L[btimesL.index(t)], J_H, btimesH)
+
 
 
 
     alphas = [0.4, 0.6, 0.8]
-    n_params = [15, 30, 45]
-    k_params = [0.20, 0.50, 0.80]
+    n_params = [15, 25, 35]
 
-    for alpha, kappa in zip(alphas, k_params):
+    for alpha, n in zip(alphas, n_params):
 
-        nobs=1000
-        ti=n
+        nobs = 1000
+        ti = n
+        t0 = ti-n
+        kappa = 0.75
         # n=25
-        # kappa=0.7
-        # kappa=0.4
 
         rf = 0.02
         g = .12
@@ -221,7 +234,6 @@ def asymmetric_auctions_plots():
         assert g < g_upper_bound(hazrateL, rf, kappa)
 
         # ## Distribution of bubble begin times: t0
-        t0 = ti-n
         tt0L = list(linspace(t0, ti, nobs+1))[:-1]
         tt0H = list(linspace(t0, ti, nobs+1))[:-1]
         ## Bubble start time posteriors: Phi(t0|ti)
@@ -255,11 +267,13 @@ def asymmetric_auctions_plots():
 
         if False:
             # Awareness distributions share the same support however, the posterior burst distributions do not
-            plot(btimesL, FL, label=r"$F_L$")
-            plot(btimesH, FH, label=r"$F_H$")
-            plot(tt0L, PhiL, label=r"$\Phi_L$")
-            plot(tt0H, PhiH, label=r"$\Phi_L$")
-            legend()
+            plot(btimesL, FL, color=color[0], linestyle='--', label=r"Posterior Burst Times: $F_L(t|t_L)$")
+            plot(btimesH, FH, color=color[1], linestyle='--', label=r"Posterior Burst Times: $F_H(t|t_H)$")
+            plot(tt0L,  PhiL, color=color[0], linestyle='-',  label=r"Awareness CDF: $\Phi_L(t_0|t_L)$")
+            plot(tt0H,  PhiH, color=color[1], linestyle='-',  label=r"Awareness CDF: $\Phi_H(t_0|t_H)$")
+            legend(loc="bottom left")
+            title("Posterior Awareness and Burst Time distributions")
+            xlabel("Time")
 
 
         B_L =  [ B(btimesL[i], g, rf, t0=t0) for i in range(len(fL))]
@@ -269,44 +283,32 @@ def asymmetric_auctions_plots():
         J_H = [ ( B_H[i]/(g-rf) - (1-FH[i])/fH[i] ) for i in range(len(fH))]
 
 
-        plot(btimesL, J_L, color=color[0], alpha=alpha, linestyle="-",
-                label=r"$type:t_L, \kappa:{}, \eta:{}$".format(kappa, n))
-        plot(btimesL, J_H, color=color[1], alpha=alpha, linestyle="-",
-                label=r"$type:t_H, \kappa:{}, \eta:{}$".format(kappa, n))
-        xlabel("Price Burst Times")
-        ylabel(r"Virtual Valuation: $J(t)$")
-        title(r"Virtual Valuations: $J_L(t_L)= \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)}$")
-        legend(loc="bottom right")
+#         plot(btimesL, J_L, color=color[0], alpha=alpha, linestyle="-",
+#                 label=r"$type:t_L, \kappa:{}, \eta:{}$".format(kappa, n))
+#         plot(btimesL, J_H, color=color[1], alpha=alpha, linestyle="-",
+#                 label=r"$type:t_H, \kappa:{}, \eta:{}$".format(kappa, n))
+#         xlabel("Price Burst Times")
+#         ylabel(r"Virtual Valuation: $J(t)$")
+#         title(r"Virtual Valuations: $J_L(t_L)= \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)}$")
+#         legend(loc="bottom right")
+
+
+        r_t = [r(t, btimesL, btimesH) for t in btimesL]
+        k_t = [k(t, btimesL, btimesH) for t in btimesL]
 
 
 
-    def r(t):
-        # Takes a type_L and returns a type_H with the same rank/percentile
-        # t is a time/type in the PhiL distribution
-        return match(FL[btimesL.index(t)], FH, btimesH)
+        "Plot t_H types on the x-axis"
+        plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.2, label=r"$k_1(t)=t$")
+        plot(r_t, btimesL, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
+        plot(k_t, btimesL, color=color[3], linestyle="-", label=r"$k(t) = J_H^{-1}(J_L(t_L))$")
+        xlim(btimesH[0], btimesH[-1])
+        ylim(btimesL[0], btimesL[-1])
 
-    def k(t):
-        "J_H^-1 (J_L(t))"
-        return match(J_L[btimesL.index(t)], J_H, btimesH)
-
-
-    r_t = [r(t) for t in btimesL]
-    k_t = [k(t) for t in btimesL]
-
-
-
-    plt.subplots(1,2)
-    "Plot t_H types on the x-axis"
-    plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.2, label=r"$k_1(t)=t$")
-    plot(r_t, btimesL, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
-    plot(k_t, btimesL, color=color[3], linestyle="-", label=r"$k(t) = J_H^{-1}(J_L(t_L))$")
-    xlim(btimesH[0], btimesH[-1])
-    ylim(btimesL[0], btimesL[-1])
-
-    legend(loc='bottom right', prop={'size':14})
-    ylabel(r"Low-hazard types: $t_L$")
-    xlabel(r"High-hazard types: $t_H$")
-    title(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $k(t) = J_H^{-1}(J_L(t_L))$")
+        legend(loc='bottom right', prop={'size':14})
+        ylabel(r"Low-hazard types: $t_L$")
+        xlabel(r"High-hazard types: $t_H$")
+        title(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $k(t) = J_H^{-1}(J_L(t_L))$")
 
 
 
@@ -365,8 +367,8 @@ def plot_figure1_price_path():
     rnorm = normalvariate
     color = ['dodgerblue', 'mediumorchid', 'palevioletred']
     dtime = linspace(0, 10, 1000)
-    g = 0.15
-    r = 0.05
+    g = 0.12
+    r = 0.02
     v = volatility = 0.025
 
     price_mu = [exp((g-r)*t) for t in dtime]
@@ -405,72 +407,58 @@ def plot_figure1_price_path():
 
 
 
-def equilibrium_delay():
+def degree_of_preemption():
 
-    r=0.05
-    g=0.15
+    rf=0.02
+    g=0.17
     f=0
-    tau = linspace(0, 20, 1000)
-    lhigh = 0.09
-    llow  = 0.03
+    xis = linspace(0, 20, 1000)
+    lhigh = 0.15
+    llow  = 0.10
     lavg  = (lhigh + llow) / 2
 
-    def B(t, g=g, f=f, r=r):
-        return 1 - exp(-(g+f-r)*t)
+    def B(t, g, rf, t0=0):
+        "Bubble component of price (fraction)"
+        bubble = 1 - exp( -(g-rf)*(t-t0) )
+        assert bubble <= 1
+        return bubble
 
     color = ['dodgerblue', 'palevioletred', 'black']
+
+
+    # for a given crash date (xi), arbitrageur hastens his sellout time by preemptime(xi)
+    preemptime = lambda xi: -1/l * log((g+f-r)/(g+f-r-l*B(xi, g, rf)))
+
     l = llow
     f = 0.0
-    assert l <= (g+f-r)
-    plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
+    plot(xis, list(map(preemptime, xis)),
             label=r"$f={},\, \lambda={}$".format(f,l), linestyle='--', linewidth=1, color=color[0])
 
     l = lhigh
     f = 0.0
-    assert l <= (g+f-r)
-    plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
+    plot(xis, list(map(preemptime, xis)),
             label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', linewidth=1, color=color[0])
 
     l = lhigh
     f = 0.01
-    assert l <= (g+f-r)
-    plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
+    plot(xis, list(map(preemptime, xis)),
             label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', linewidth=1, color=color[1])
 
     l = lavg
     f = 0.0
-    assert l <= (g+f-r)
-    plot(tau, list(map(lambda t: -log((g+f-r)/(g+f-r-l*B(t)))/l, tau)),
+    plot(xis, list(map(preemptime, xis)),
             label=r"$f={},\, \lambda={}$ (arbitraguer)".format(f,l), linestyle='-.', linewidth=1, color=color[2])
 
 
-    # endogenous crash time: \tau + nk
-    # n = 20
-    # k = 0.75
-    # cost_benefit = [(g-r)/(n*k*t) for t in tau]
-    # hazard_rate_eq = l/(1-exp(-l*n*k))
-    # equilibrium_tau = (g-r)/hazard_rate_eq
-    # axvline(x=equilibrium_tau, linewidth=1, color='k', linestyle='--',
-    #         label=r"Endogenous Burst Time: $\tau^* + \eta\kappa; \, \kappa=3/4,\, \eta=10$", alpha=0.5)
-
     # plot labels
-    legend(loc='left')
-    xlabel(r"Elapsed time since bubble began: $t - t_0$")
-    ylabel(r"Waiting Time:  $\tau^*$")
-    title(r"Endogenous Waiting Times Before Exit")
-    ylim(-10, 0)
+    legend(loc='bottom left')
+    xlabel(r"$\xi$ (an exogenous bubble burst time)")
+    ylabel(r"Degree of Preemption:  $\tau^* - \xi$")
+    title(r"Degree of Preemption (Reduction in total waiting time) $g={}$".format(g))
+    ylim(-20, 0)
+    xlim(0, 20)
 
 
-
-    def plot_endog_crash():
-        plot(tau, [(g-r)/(n*k*t) for t in tau],
-                label=r"$Cost-Benefit: (g-r)/\beta(\tau); \kappa=3/4$", linestyle='--', color=color[2], alpha=0.5)
-
-        plot(tau, [hazard_rate_eq for t in tau],
-                label=r"$h^*=\lambda/(1-e^{-\lambda\eta\kappa})$", linestyle='-', color=color[0], alpha=0.5)
-
-        plot(tau, [equilibrium_tau for t in tau],
-                label=r"$\tau^*$", linestyle='--', color=color[1], alpha=0.5)
 
 
 
@@ -491,6 +479,7 @@ def lam(t, num, lp=(2+1)/2, h=2, l=1):
     top = h - l
     bottom = 1 + (h - lp)/(lp - l) * exp((h-l)*t - num*(h/l))
     return l + top/bottom
+
 
 
 def plot_lambdas():
