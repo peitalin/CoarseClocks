@@ -207,7 +207,7 @@ def asymmetric_auctions_plots():
         # t is a time/type in the PhiL distribution
         return match(FL[btimesL.index(t)], FH, btimesH)
 
-    def k(t, btimesL, btimesH):
+    def j(t, btimesL, btimesH):
         "Match type t_L with t_H with same virtual valuation"
         "J_H^-1 (J_L(t))"
         return match(J_L[btimesL.index(t)], J_H, btimesH)
@@ -217,70 +217,70 @@ def asymmetric_auctions_plots():
 
     alphas = [0.4, 0.6, 0.8]
     n_params = [15, 20, 25]
+    kappa = 0.8
+    n=20
+    nobs = 1000
 
-    for alpha, n in zip(alphas, n_params):
+    # for n, kappa in zip(n_params, k_params):
 
-        nobs = 1000
-        ti = n
-        t0 = ti-n
-        kappa = 0.75
-        # n=25
+    rf = 0.02
+    g = .12
+    hazrateH = .15
+    hazrateL = .1
 
-        rf = 0.02
-        g = .12
-        hazrateH = .2
-        hazrateL = .1
-        # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
-        assert g < g_upper_bound(hazrateL, rf, kappa)
+    # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
+    assert g < g_upper_bound(hazrateL, rf, kappa)
 
-        # ## Distribution of bubble begin times: t0
-        tt0L = list(linspace(t0, ti, nobs+1))[:-1]
-        tt0H = list(linspace(t0, ti, nobs+1))[:-1]
-        ## Bubble start time posteriors: Phi(t0|ti)
-        phiL = [phi(hazrateL, n, ti, t0) for t0 in tt0L]
-        PhiL = [Phi(hazrateL, n, ti, t0) for t0 in tt0L]
+    ti = n
+    t0 = ti-n
+    # ## Distribution of bubble begin times: t0
+    tt0L = list(linspace(t0, ti, nobs+1))[:-1]
+    tt0H = list(linspace(t0, ti, nobs+1))[:-1]
+    ## Bubble start time posteriors: Phi(t0|ti)
+    phiL = [phi(hazrateL, n, ti, t0) for t0 in tt0L]
+    PhiL = [Phi(hazrateL, n, ti, t0) for t0 in tt0L]
 
-        phiH = [phi(hazrateH, n, ti, t0) for t0 in tt0H]
-        PhiH = [Phi(hazrateH, n, ti, t0) for t0 in tt0H]
-
-
-        # burst times
-        tauL = tau_star(hazrateL, g, rf)
-        # tauH = tau_star(hazrateH, g, rf)
-        tauH = tau_star(hazrateH, g, rf) + tauL
-        # Plus tau: arbitraguer sells out after tau periods, meaning lender only finds out
-        # about bubble rumor tau periods after the arbitrageur
-
-        b0 = lambda tau: t0 + tau + n*kappa
-        bi = lambda tau: ti + tau + n*kappa
-
-        btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
-        btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
-        # Burst time posteriors: F = Phi(ti + tau - epsilon|ti)
-
-        fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
-        FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
-
-        fH = [f(hazrateH, n, bi(tauH), t) for t in btimesH]
-        FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
+    phiH = [phi(hazrateH, n, ti, t0) for t0 in tt0H]
+    PhiH = [Phi(hazrateH, n, ti, t0) for t0 in tt0H]
 
 
-        if False:
-            # Awareness distributions share the same support however, the posterior burst distributions do not
-            plot(btimesL, FL, color=color[0], linestyle='--', label=r"Posterior Burst Times: $F_L(t|t_L)$")
-            plot(btimesH, FH, color=color[1], linestyle='--', label=r"Posterior Burst Times: $F_H(t|t_H)$")
-            plot(tt0L,  PhiL, color=color[0], linestyle='-',  label=r"Awareness CDF: $\Phi_L(t_0|t_L)$")
-            plot(tt0H,  PhiH, color=color[1], linestyle='-',  label=r"Awareness CDF: $\Phi_H(t_0|t_H)$")
-            legend(loc="bottom left")
-            title("Posterior Awareness and Burst Time distributions")
-            xlabel("Time")
+    # burst times
+    tauL = tau_star(hazrateL, g, rf)
+    # tauH = tau_star(hazrateH, g, rf)
+    tauH = tau_star(hazrateH, g, rf) + tauL
+    # Plus tau: arbitraguer sells out after tau periods, meaning lender only finds out
+    # about bubble rumor tau periods after the arbitrageur
+
+    b0 = lambda tau: t0 + tau + n*kappa
+    bi = lambda tau: ti + tau + n*kappa
+
+    btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
+    btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
+    # Burst time posteriors: F = Phi(ti + tau - epsilon|ti)
+
+    fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
+    FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
+
+    fH = [f(hazrateH, n, bi(tauH), t) for t in btimesH]
+    FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
 
 
-        B_L =  [ B(btimesL[i], g, rf, t0=t0) for i in range(len(fL))]
-        B_H =  [ B(btimesH[i], g, rf, t0=t0) for i in range(len(fH))]
+    if False:
+        # Awareness distributions share the same support however, the posterior burst distributions do not
+        plot(btimesL, FL, color=color[0], linestyle='--', label=r"Posterior Burst Times: $F_L(t|t_L)$")
+        plot(btimesH, FH, color=color[1], linestyle='--', label=r"Posterior Burst Times: $F_H(t|t_H)$")
+        plot(tt0L,  PhiL, color=color[0], linestyle='-',  label=r"Awareness CDF: $\Phi_L(t_0|t_L)$")
+        plot(tt0H,  PhiH, color=color[1], linestyle='-',  label=r"Awareness CDF: $\Phi_H(t_0|t_H)$")
+        legend(loc="bottom left")
+        title("Posterior Awareness and Burst Time distributions")
+        xlabel("Time")
 
-        J_L = [ ( B_L[i]/(g-rf) - (1-FL[i])/fL[i] ) for i in range(len(fL))]
-        J_H = [ ( B_H[i]/(g-rf) - (1-FH[i])/fH[i] ) for i in range(len(fH))]
+
+    B_L =  [ B(btimesL[i], g, rf, t0=t0) for i in range(len(fL))]
+    B_H =  [ B(btimesH[i], g, rf, t0=t0) for i in range(len(fH))]
+
+    J_L = [ ( B_L[i]/(g-rf) - (1-FL[i])/fL[i] ) for i in range(len(fL))]
+    J_H = [ ( B_H[i]/(g-rf) - (1-FH[i])/fH[i] ) for i in range(len(fH))]
 
 
 #         plot(btimesL, J_L, color=color[0], alpha=alpha, linestyle="-",
@@ -293,36 +293,37 @@ def asymmetric_auctions_plots():
 #         legend(loc="bottom right")
 
 
-        r_t = [r(t, btimesL, btimesH) for t in btimesL]
-        k_t = [k(t, btimesL, btimesH) for t in btimesL]
+    r_t = [r(t, btimesL, btimesH) for t in btimesL]
+    j_t = [j(t, btimesL, btimesH) for t in btimesL]
 
 
 
-        "Plot t_H types on the x-axis"
-        plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.2, label=r"$k_1(t)=t$")
-        plot(r_t, btimesL, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
-        plot(k_t, btimesL, color=color[3], linestyle="-", label=r"$k(t) = J_H^{-1}(J_L(t_L))$")
-        xlim(btimesH[0], btimesH[-1])
-        ylim(btimesL[0], btimesL[-1])
+    "Plot t_H types on the x-axis"
+    plt.subplot(1,2,1)
+    plt.plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.2, label=r"$j_1(t)=t$")
+    plt.plot(btimesH, btimesH, color='black', linestyle='--', alpha=0.2, label=r"$j_1(t)=t$")
+    plt.plot(r_t, btimesL, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
+    plt.plot(j_t, btimesL, color=color[3], linestyle="-", label=r"$j(t) = J_H^{-1}(J_L(t_L))$")
+    plt.xlim(btimesH[0], btimesH[-1])
+    plt.ylim(btimesL[0], btimesL[-1])
 
-        legend(loc='bottom right', prop={'size':14})
-        ylabel(r"Low-hazard types: $t_L$")
-        xlabel(r"High-hazard types: $t_H$")
-        title(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $k(t) = J_H^{-1}(J_L(t_L))$")
+    plt.legend(loc='bottom right', prop={'size':14})
+    plt.ylabel(r"Low-hazard types: $t_L$")
+    plt.xlabel(r"High-hazard types: $t_H$")
 
 
 
     "Plot t_l on the x-axis"
-    plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$k_1(t)=t$")
+    plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)=t$")
     plot(btimesL, r_t, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
-    plot(btimesL, k_t, color=color[3], linestyle="-", label=r"$k(t) = J_H^{-1}(J_L(t_L))$")
+    plot(btimesL, j_t, color=color[3], linestyle="-", label=r"$j(t) = J_H^{-1}(J_L(t_L))$")
     xlim(btimesL[0], btimesL[-1])
     ylim(btimesH[0], btimesH[-1])
 
     legend(loc='bottom right', prop={'size':14})
     xlabel(r"Low-hazard types: $t_L$")
     ylabel(r"High-hazard types: $t_H$")
-    title(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $k(t) = J_H^{-1}(J_L(t_L))$")
+    title(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $j(t) = J_H^{-1}(J_L(t_L))$")
 
 
 
@@ -410,7 +411,7 @@ def plot_figure1_price_path():
 def degree_of_preemption():
 
     rf=0.02
-    g=0.17
+    g=0.14
     fee=0
     xis = linspace(0, 20, 1000)
     lhigh = 0.15
@@ -427,27 +428,27 @@ def degree_of_preemption():
 
 
     # for a given crash date (xi), arbitrageur hastens his sellout time by preemptime(xi)
-    preemptime = lambda xi: -1/l * log((g+fee-r)/(g+fee-r-l*B(xi, g, rf)))
+    preemptime = lambda xi: -1/l * log((g+fee-rf)/(g+fee-rf-l*B(xi, g, rf)))
 
     l = llow
     fee = 0.0
     plot(xis, list(map(preemptime, xis)),
-            label=r"$f={},\, \lambda={}$".format(f,l), linestyle='--', linewidth=1, color=color[0])
+            label=r"$f={},\, \lambda={}$".format(fee,l), linestyle='--', linewidth=1, color=color[0])
 
     l = lhigh
     fee = 0.0
     plot(xis, list(map(preemptime, xis)),
-            label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', linewidth=1, color=color[0])
+            label=r"$f={},\, \lambda={}$".format(fee,l), linestyle='-', linewidth=1, color=color[0])
 
     l = lhigh
     fee = 0.01
     plot(xis, list(map(preemptime, xis)),
-            label=r"$f={},\, \lambda={}$".format(f,l), linestyle='-', linewidth=1, color=color[1])
+            label=r"$f={},\, \lambda={}$".format(fee,l), linestyle='-', linewidth=1, color=color[1])
 
     l = lavg
     fee = 0.0
     plot(xis, list(map(preemptime, xis)),
-            label=r"$f={},\, \lambda={}$ (arbitraguer)".format(f,l), linestyle='-.', linewidth=1, color=color[2])
+            label=r"$f={},\, \lambda={}$ (arbitraguer)".format(fee,l), linestyle='-.', linewidth=1, color=color[2])
 
 
     # plot labels
@@ -467,18 +468,6 @@ def degree_of_preemption():
 
 
 
-def lam(t, num, lp=(2+1)/2, h=2, l=1):
-    "lp: lam prior, h: lam_high, l: lam_low"
-
-    def ln(x):
-        return x.ln()
-
-    # Must use Decimal, otherwise rounding error in prior, l=lp
-    t, lp, h, l = map(Decimal, [t, lp, h, l])
-    num = Decimal(int(num))
-    top = h - l
-    bottom = 1 + (h - lp)/(lp - l) * exp((h-l)*t - num*(h/l))
-    return l + top/bottom
 
 
 
@@ -486,6 +475,18 @@ def plot_lambdas():
     # (h-l) / (1 + ((h-o)/(o-l)) * exp((h-l)*t) * exp(-n*log(h/l)))
     from numpy.random import poisson
 
+    def lam(t, num, lp=(2+1)/2, h=2, l=1):
+        "lp: lam prior, h: lam_high, l: lam_low"
+
+        def ln(x):
+            return x.ln()
+
+    # Must use Decimal, otherwise rounding error in prior, l=lp
+    t, lp, h, l = map(Decimal, [t, lp, h, l])
+    num = Decimal(int(num))
+    top = h - l
+    bottom = 1 + (h - lp)/(lp - l) * exp((h-l)*t - num*(h/l))
+    return l + top/bottom
     # PICK j=1 or j=0
     j=0
 
