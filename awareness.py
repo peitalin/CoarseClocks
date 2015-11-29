@@ -218,7 +218,7 @@ def asymmetric_auctions_plots():
     alphas = [0.4, 0.6, 0.8]
     n_params = [15, 20, 25]
     kappa = 0.8
-    n=20
+    n=15
     nobs = 1000
 
     # for n, kappa in zip(n_params, k_params):
@@ -295,7 +295,6 @@ def asymmetric_auctions_plots():
 
     r_t = [r(t, btimesL, btimesH) for t in btimesL]
     j_t = [j(t, btimesL, btimesH) for t in btimesL]
-
 
 
     "Plot t_H types on the x-axis"
