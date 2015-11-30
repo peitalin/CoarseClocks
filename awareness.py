@@ -192,6 +192,9 @@ def asymmetric_auctions_plots():
         idx = np.abs(np.array(lookup_list) - key_value).argmin()
         return return_list[idx]
 
+    def round_up(x, places):
+        return round(x, places) if round(x, places) >= x else round(x + 1/10**places, places)
+
     def tau_star(hazrate, g, rf):
         assert hazrate/(1-exp(-(hazrate*n*kappa))) > (g-rf)
         # h(t) > (g-rf) otherwise nan (never crashes)
@@ -251,8 +254,7 @@ def asymmetric_auctions_plots():
     tauH = tau_star(hazrateH, g, rf) + tauL
     # Plus tau: arbitraguer sells out after tau periods, meaning lender only finds out
     # about bubble rumor tau periods after the arbitrageur
-    print(tauL)
-    print(tauH)
+    print("tauL: {}\ntauH: {}".format(tauL, tauH))
 
     b0 = lambda tau: t0 + tau + n*kappa
     bi = lambda tau: ti + tau + n*kappa
@@ -260,12 +262,6 @@ def asymmetric_auctions_plots():
     btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
     btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
     # Burst time posteriors: F = Phi(ti + tau - epsilon|ti)
-    def round_up(x, places):
-        if round(x, places) < x:
-            return round(x + 1/10**places, places)
-        else:
-            return round(x, places)
-
     # Coarsening information partitions
     btimesL = [round_up(x, 0) for x in btimesL]
     btimesH = [round_up(x, 0) for x in btimesH]
