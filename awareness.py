@@ -220,14 +220,14 @@ def asymmetric_auctions_plots():
 
     alphas = [0.4, 0.6, 0.8]
     n_params = [15, 20, 25]
-    kappa = 0.8
+    kappa = 0.6
     n=15
     nobs = 1000
 
     # for n, kappa in zip(n_params, k_params):
 
     rf = 0.01
-    g = .10
+    g = .1
     hazrateH = .08
     hazrateL = .05
 
@@ -311,7 +311,7 @@ def asymmetric_auctions_plots():
 
     "Plot t_H types on the x-axis"
     plt.subplot(1,2,1)
-    plt.plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$ (L's aggressive bid in FPA)")
+    # plt.plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$ (L's aggressive bid in FPA)")
     plt.plot(btimesL, btimesL, color='black', linestyle=':', alpha=0.6, label=r"$j_2(t)=t$ (L's truthful bid in SPA)")
     plt.plot(r_t, btimesL, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
     plt.plot(j_t, btimesL, color=color[3], linestyle="-", label=r"$j(t) = J_H^{-1}(J_L(t_L))$")
@@ -323,17 +323,16 @@ def asymmetric_auctions_plots():
     plt.xlabel(r"High-hazard types: $t_H$")
 
 
-
     "Plot t_l on the x-axis"
     plt.subplot(1,2,2)
-    plt.plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$ (L's aggressive bid in FPA)")
+    # plt.plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$ (L's aggressive bid in FPA)")
     plt.plot(btimesL, btimesL, color='black', linestyle=':', alpha=0.6, label=r"$j_2(t)=t$ (L's truthful bid in SPA)")
     plt.plot(btimesL, r_t, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
     plt.plot(btimesL, j_t, color=color[3], linestyle="-", label=r"$j(t) = J_H^{-1}(J_L(t_L))$")
     plt.xlim(btimesL[0], btimesL[-1])
     plt.ylim(btimesH[0], btimesH[-1])
 
-    legend(loc='bottom right', prop={'size':14})
+    legend(loc='bottom right', prop={'size':12})
     plt.xlabel(r"Low-hazard types: $t_L$")
     plt.ylabel(r"High-hazard types: $t_H$")
     title(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $j(t) = J_H^{-1}(J_L(t_L))$")
