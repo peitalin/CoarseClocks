@@ -139,7 +139,7 @@ def stochastic_dominance_plots():
     # Likelihood ratio dominance
     likelihood_ratio = [l/h for l,h in zip(phiL, phiH)]
     plot(tt, likelihood_ratio, color=color[1], linestyle="-", label=r"$\phi_L(t)/\phi_H(t)$")
-    legend(loc="bottom left", prop={'size':14})
+    legend(loc="lower left", prop={'size':14})
 
     # Hazard-rate dominance
     HR_L = [p/(1-P) for p,P in zip(phiL,PhiL)]
@@ -292,7 +292,7 @@ def asymmetric_auctions_plots():
             plot(btimesH, FH, color=color[1], linestyle='-', label=r"Posterior Burst Times: $F_H(t|t_H)$")
             plot(tt0L,  PhiL, color=color[0], linestyle='--',  label=r"Awareness CDF: $\Phi_L(t_0|t_L)$")
             plot(tt0H,  PhiH, color=color[1], linestyle='--',  label=r"Awareness CDF: $\Phi_H(t_0|t_H)$")
-            legend(loc="bottom left")
+            legend(loc="lower left")
             title("Posterior Awareness and Burst Time distributions")
             xlabel("Time")
 
@@ -490,7 +490,7 @@ def degree_of_preemption():
 
 
     # plot labels
-    legend(loc='bottom left')
+    legend(loc='lower left')
     xlabel(r"$\xi$ (an exogenous bubble burst time)")
     ylabel(r"Degree of Preemption:  $\tau^* - \xi$")
     title(r"Degree of Preemption (Reduction in total waiting time) $g={}$".format(g))
