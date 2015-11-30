@@ -262,9 +262,10 @@ def asymmetric_auctions_plots():
     btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
     btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
     # Burst time posteriors: F = Phi(ti + tau - epsilon|ti)
-    # Coarsening information partitions
-    btimesL = [round_up(x, 0) for x in btimesL]
-    btimesH = [round_up(x, 0) for x in btimesH]
+
+    # "Coarsening information partitions"
+    # btimesL = [round_up(x, 0) for x in btimesL]
+    # btimesH = [round_up(x, 0) for x in btimesH]
 
 
     fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
@@ -436,8 +437,8 @@ def degree_of_preemption():
         assert bubble <= 1
         return bubble
 
-    color = ['dodgerblue', 'palevioletred', 'black']
 
+    color = ['dodgerblue', 'mediumorchid', 'palevioletred', 'steelblue', 'seagreen']
 
     # for a given crash date (xi), arbitrageur hastens his sellout time by preemptime(xi)
     preemptime = lambda xi: -1/l * log((g+fee-rf)/(g+fee-rf-l*B(xi, g, rf)))
@@ -455,12 +456,12 @@ def degree_of_preemption():
     l = lhigh
     fee = 0.01
     plot(xis, list(map(preemptime, xis)),
-            label=r"$f={},\, \lambda={}$".format(fee,l), linestyle='-', linewidth=1, color=color[1])
+            label=r"$f={},\, \lambda={}$".format(fee,l), linestyle='-', linewidth=1, color=color[2])
 
     l = lavg
     fee = 0.0
     plot(xis, list(map(preemptime, xis)),
-            label=r"$f={},\, \lambda={}$ (arbitraguer)".format(fee,l), linestyle='-.', linewidth=1, color=color[2])
+            label=r"$f={},\, \lambda={}$ (arbitraguer)".format(fee,l), linestyle='-.', linewidth=1, color='black')
 
 
     # plot labels
