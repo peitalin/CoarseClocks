@@ -230,13 +230,13 @@ def asymmetric_auctions_plots():
         "Returns max growth rate for endogenous crash, otherwise diverges"
         return hazrate/(1-exp(-(hazrate*n*kappa))) + rf - rf/100000
 
-    def r(t, btimesL, btimesH):
+    def r(t, FL, FH, btimesL, btimesH):
         "Match type t_L with t_H of same rank in F_H (CDF of burst times)"
         # Takes a type_L and returns a type_H with the same rank/percentile
         # t is a time/type in the PhiL distribution
         return match(FL[btimesL.index(t)], FH, btimesH)
 
-    def j(t, btimesL, btimesH):
+    def j(t, J_L, J_H, btimesL, btimesH):
         "Match type t_L with t_H with same virtual valuation"
         "J_H^-1 (J_L(t))"
         return match(J_L[btimesL.index(t)], J_H, btimesH)
@@ -246,17 +246,20 @@ def asymmetric_auctions_plots():
 
     alphas = [0.4, 0.6, 0.8]
     n_params = [15, 20, 25]
-    kappa = 0.3
+    kappa = 0.5
     n=25
     nobs = 2000
 
     plttype = "kappa"
     # plttype = "tau"
+    # plttype = "n"
 
     if plttype == "tau":
         iter_params = tau_params = [kappa, kappa]
     elif plttype == "kappa":
-        iter_params = k_params = [0.3, 0.7]
+        iter_params = k_params = [0.25, 0.5]
+    elif plttype == "n":
+        iter_params = n_params = [10, 25, 40]
 
 
     for num, kappa in enumerate(iter_params):
@@ -295,7 +298,8 @@ def asymmetric_auctions_plots():
         # burst times
         tauL = tau_star(hazrateL, g, rf)
         tauH = tau_star(hazrateH, g, rf)
-        # tauH = tau_star(hazrateH, g, rf) + tauL
+        if plttype == 'tau' and num == 1:
+            tauH = tau_star(hazrateH, g, rf) + tauL
         # Plus tau: arbitraguer sells out after tau periods, meaning lender
         # becomes aware tau periods after the arbitrageur
 
@@ -317,7 +321,7 @@ def asymmetric_auctions_plots():
 
 
 
-        if 1:
+        if 0:
             # Awareness distributions share the same support however, the posterior burst distributions do not
             plot(btimesL, FL, color=color[0], linestyle='-', label=r"Posterior Burst Times: $F_L(t|t_L)$")
             plot(btimesH, FH, color=color[1], linestyle='-', label=r"Posterior Burst Times: $F_H(t|t_H)$")
@@ -326,7 +330,8 @@ def asymmetric_auctions_plots():
             plot(tt0L,  PhiL, color=color[0], linestyle='--',  label=r"Awareness CDF: $\Phi_L(t_0|t_L)$")
             plot(tt0H,  PhiH, color=color[1], linestyle='--',  label=r"Awareness CDF: $\Phi_H(t_0|t_H)$")
             legend(loc="lower right")
-            title(r"Awareness and Burst Time distributions ($\kappa={}$, $\lambda_H={}$, $\lambda_L={}$)".format(kappa, hazrateH,hazrateL))
+            title(r"Awareness and Burst Time distributions" +
+                "($\kappa={}$, $\lambda_H={}$, $\lambda_L={}$)".format(kappa, hazrateH,hazrateL))
             xlabel("Time")
 
 
@@ -339,32 +344,45 @@ def asymmetric_auctions_plots():
         RH_L = [ (1-FL[i])/fL[i] for i in range(len(fL))]
         RH_H = [ (1-FH[i])/fH[i] for i in range(len(fH))]
 
-        J_L = array(B_L)/(g-rf) - array(HR_L)
-        J_H = array(B_H)/(g-rf) - array(HR_H)
+        J_L = array(B_L)/(g-rf) - array(RH_L)
+        J_H = array(B_H)/(g-rf) - array(RH_H)
 
 
-        plot(btimesL, J_L, color=color[0], linestyle="-",
-                label=r"$type:t_L, \kappa:{}, \eta:{}$".format(kappa, n))
-        plot(btimesL, J_H, color=color[1], linestyle="-",
-                label=r"$type:t_H, \kappa:{}, \eta:{}$".format(kappa, n))
-        xlabel("Price Burst Times")
-        ylabel(r"Virtual Valuation: $J(t)$")
-        title(r"Virtual Valuations: $J_L(t_L)= \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)}$")
-        legend(loc="lower right")
+        if 0:
+            plot(btimesL, J_L, color=color[0], linestyle="-",
+                    label=r"$type:t_L, \kappa:{}, \eta:{}$".format(kappa, n))
+            plot(btimesH, J_H, color=color[1], linestyle="-",
+                    label=r"$type:t_H, \kappa:{}, \eta:{}$".format(kappa, n))
+            xlabel("Price Burst Times")
+            ylabel(r"Virtual Valuation: $J(t)$")
+            title(r"Virtual Valuations: $J_L(t_L)= \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)}$")
+            legend(loc="lower right")
 
 
-        r_t = [r(t, btimesL, btimesH) for t in btimesL]
-        j_t = [j(t, btimesL, btimesH) for t in btimesL]
+        r_t = [r(t, FL, FH, btimesL, btimesH) for t in btimesL]
+        j_t = [j(t, J_L, J_H, btimesL, btimesH) for t in btimesL]
 
+        # r_t = [r(t, FH, FL, btimesH, btimesL) for t in btimesH]
+        # j_t = [j(t, J_H, J_L, btimesH, btimesL) for t in btimesH]
 
         "Plot t_l on the x-axis"
         plt.subplot(1, len(iter_params), num+1)
-        # plt.plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$ (L's aggressive bid in FPA)")
-        plt.plot(btimesL, btimesL, color='black', linestyle=':', alpha=0.6, label=r"$j_2(t)=t$ (L's truthful bid in SPA)")
-        plt.plot(btimesL, r_t, color=color[2], linestyle="-", label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
-        plt.plot(btimesL, j_t, color=color[3], linestyle="-", label=r"$j(t) = J_H^{-1}(J_L(t_L))$")
-        plt.xlim(btimesL[0], btimesL[-1])
-        plt.ylim(btimesH[0], btimesH[-1])
+        # plt.plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$ (L's aggressive bid in FPA)")
+        plt.plot(btimesL, btimesL, color='black', linestyle=':', linewidth=1, alpha=0.6, label=r"$t_L=t_L, 45^o$")
+
+        plt.plot(btimesL, r_t, color=color[2], linestyle="-", linewidth=1, label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
+        plt.plot(btimesL, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_H^{-1}(MR_L(t_L))$")
+
+        endog_crash = t0 + tauL + n*kappa
+        plt.axvline(endog_crash, linewidth=1, linestyle='-.', alpha=0.5, color='black')
+        plt.annotate(r"burst time: $t_0 + \tau^* + \eta*\kappa$",
+                    xy=(endog_crash+0.5, 3))
+
+        plt.axhline(btimesH[0], linestyle='-', color='grey', linewidth=1)
+        plt.axvline(btimesL[0], linestyle='-', color='grey', linewidth=1)
+        plt.xlim(0, btimesL[-1])
+        plt.ylim(0, btimesH[-1])
+
 
 
 
@@ -375,8 +393,8 @@ def asymmetric_auctions_plots():
     plt.ylabel(r"High-hazard types: $t_H$")
 
     # plt.title(r"kappa = {}".format(k_params[0]))
-    # plt.title(r"$\tau_H^*$")
-    plt.title(r"kappa = {}; $\tau_H^*$".format(k_params[0]))
+    plt.title(r"$\tau_H^*$")
+    # plt.title(r"kappa = {}; $\tau_H^*$".format(k_params[0]))
 
 
     "Plot 2"
@@ -386,11 +404,11 @@ def asymmetric_auctions_plots():
     plt.ylabel(r"High-hazard types: $t_H$")
 
     # plt.title(r"kappa = {}".format(k_params[1]))
-    # plt.title(r"$\tau^*_L + \tau_H^*$")
-    plt.title(r"kappa = {}; $\tau^*_L + \tau_H^*$".format(k_params[1]))
+    plt.title(r"$\tau^*_L + \tau_H^*$")
+    # plt.title(r"kappa = {}; $\tau^*_L + \tau_H^*$".format(k_params[1]))
 
 
-    plt.suptitle(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $j(t) = J_H^{-1}(J_L(t_L))$")
+    plt.suptitle(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $j(t) = MR_H^{-1}(MR_L(t_L))$")
 
 
 
