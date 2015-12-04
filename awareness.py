@@ -259,7 +259,7 @@ def asymmetric_auctions_plots():
     if plttype == "tau":
         iter_params = tau_params = [kappa, kappa]
     elif plttype == "kappa":
-        iter_params = k_params = [0.25, 0.5]
+        iter_params = k_params = [0.25, 0.5, .75]
     elif plttype == "n":
         iter_params = n_params = [10, 25, 40]
 
@@ -267,9 +267,9 @@ def asymmetric_auctions_plots():
     for num, kappa in enumerate(iter_params):
 
         rf = 0.01
-        g = .1
-        hazrateH = .07
-        hazrateL = .06
+        g = .06
+        hazrateH = .04
+        hazrateL = .02
 
         # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
         print("g upper bound: {}".format(g_upper_bound(hazrateL, rf, kappa, n)))
