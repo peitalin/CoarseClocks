@@ -292,7 +292,10 @@ def asymmetric_auctions_plots():
 
         print("tauL: {}\ntauH: {}".format(tauL, tauH))
         btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
+        # Distributional Shift
         btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
+        # Distribution Stretch
+        btimesH = list(linspace(b0(tauL), bi(tauH), nobs+1))[:-1]
 
         # if 0:
         #     "distribution stretch"
@@ -301,8 +304,8 @@ def asymmetric_auctions_plots():
 
         fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
         FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
-        fH = [f(hazrateH, n, bi(tauH), t) for t in btimesH]
-        FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
+        fH = [f(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
+        FH = [F(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
 
         if plttype == 'tau' and num == 1:
             fH = [f(hazrateH, n, bi(tauH+tauL), t) for t in btimesH]
@@ -339,9 +342,10 @@ def asymmetric_auctions_plots():
         RH_H = [ (1-FH[i])/fH[i] for i in range(len(fH))]
 
         J_L = array(RH_L) - array(B_L)/(g-rf)
-        J_L = array(RH_L) - array(B_L)/(g-rf)
         J_H = array(RH_H) - array(B_H)/(g-rf)
-        J_H = array(RH_H) - array(B_H)/(g-rf)
+
+        # J_L = array(RH_L) - array(B_L)/(g-rf)
+        # J_H = array(RH_H) - array(B_H)/(g-rf)
 
 
         if 0:
@@ -355,28 +359,28 @@ def asymmetric_auctions_plots():
             legend(loc="lower right")
 
 
-        r_t = [r(t, FL, FH, btimesL, btimesH) for t in btimesL]
-        j_t = [j(t, J_L, J_H, btimesL, btimesH) for t in btimesL]
+        # r_t = [r(t, FL, FH, btimesL, btimesH) for t in btimesL]
+        # j_t = [j(t, J_L, J_H, btimesL, btimesH) for t in btimesL]
 
-        # r_t = [r(t, FH, FL, btimesH, btimesL) for t in btimesH]
-        # j_t = [j(t, J_H, J_L, btimesH, btimesL) for t in btimesH]
+        r_t = [r(t, FH, FL, btimesH, btimesL) for t in btimesH]
+        j_t = [j(t, J_H, J_L, btimesH, btimesL) for t in btimesH]
 
         "Plot t_l on the x-axis"
         plt.subplot(1, len(iter_params), num+1)
-        # plt.plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$ (L's aggressive bid in FPA)")
-        plt.plot(btimesL, btimesL, color='black', linestyle=':', linewidth=1, alpha=0.99, label=r"$t_L=t_L, 45^o$")
+        plt.plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$ (L's aggressive bid in FPA)")
+        plt.plot(btimesH, btimesH, color='black', linestyle=':', linewidth=1, alpha=0.99, label=r"$t_L=t_L, 45^o$")
 
-        plt.plot(btimesL, r_t, color=color[2], linestyle="-", linewidth=1, label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
-        plt.plot(btimesL, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_H^{-1}(MR_L(t_L))$")
+        plt.plot(btimesH, r_t, color=color[2], linestyle="-", linewidth=1, label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
+        plt.plot(btimesH, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_H^{-1}(MR_L(t_L))$")
 
         endog_crash = t0 + tauL + n*kappa
         plt.axvline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
                     label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
 
-        plt.axhline(btimesH[0], linestyle='-', color='grey', linewidth=1.5)
-        plt.axvline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
-        plt.xlim(0, btimesL[-1])
-        plt.ylim(0, btimesH[-1])
+        plt.axhline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
+        plt.axvline(btimesH[0], linestyle='-', color='grey', linewidth=1.5)
+        plt.xlim(0, btimesH[-1])
+        plt.ylim(0, btimesL[-1])
 
 
 
