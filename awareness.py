@@ -68,9 +68,9 @@ def reverse_hazard(l, n, ti, t0):
 def F(l, n, ti, t0):
     """ PHI(t_0 | t_i)
     l: lambda, n: awareness window, ti: agent's time, t0: time bubble began """
-    # if not (ti <= t0+n):
-    #     if round(t0+n - ti, 10) != 0:
-    #         raise(AssertionError("ti: {} <= t0+n: {}".format(ti, t0+n)))
+    if not (ti <= t0+n):
+        if round(t0+n - ti, 10) != 0:
+            raise(AssertionError("ti: {} <= t0+n: {}".format(ti, t0+n)))
     top = exp(l*n) - exp(l*(ti - t0))
     bottom = exp(l*n) - 1
     return top/bottom
@@ -243,6 +243,11 @@ def asymmetric_auctions_plots():
         "J_H^-1 (J_L(t))"
         return match(J_L[btimesL.index(t)], J_H, btimesH)
 
+    def printJ(t):
+        idx1 = np.abs(array(btimesL) - t).argmin()
+        idx2 = np.abs(array(btimesH) - t).argmin()
+        print(r"J_L = {}".format(J_L[idx1]))
+        print(r"J_H = {}".format(J_H[idx2]))
 
 
 
@@ -259,7 +264,7 @@ def asymmetric_auctions_plots():
     if plttype == "tau":
         iter_params = tau_params = [kappa, kappa]
     elif plttype == "kappa":
-        iter_params = k_params = [0.1, 0.3, 0.6, 0.9]
+        iter_params = k_params = [0.25, 0.5, 0.75]
     elif plttype == "n":
         iter_params = n_params = [10, 25, 40]
 
@@ -269,7 +274,7 @@ def asymmetric_auctions_plots():
         rf = 0.01
         g = .06
         hazrateH = .04
-        hazrateL = .02
+        hazrateL = .01
 
         # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
         print("g upper bound: {}".format(g_upper_bound(hazrateL, rf, kappa, n)))
@@ -312,6 +317,10 @@ def asymmetric_auctions_plots():
         btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
         btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
 
+        # if 0:
+        #     "distribution stretch"
+            # btimesH = list(linspace(b0(tauL), bi(tauH), nobs+1))[:-1]
+
 
         fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
         FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
@@ -337,6 +346,11 @@ def asymmetric_auctions_plots():
                 "($\kappa={}$, $\lambda_H={}$, $\lambda_L={}$)".format(kappa, hazrateH,hazrateL))
             xlabel("Time")
 
+            plot(btimesH, array(FL) - array(FL)**2, label=r"Adverse Selection cost")
+            plot(btimesL, np.convolve(1-array(fH), fL, mode='same'))
+            G = 1 - array(FH)
+            plot(btimesH, [g*f for g,f in zip(G, FH)])
+
 
         B_L =  [ B(btimesL[i], g, rf, t0=t0) for i in range(len(fL))]
         B_H =  [ B(btimesH[i], g, rf, t0=t0) for i in range(len(fH))]
@@ -348,6 +362,8 @@ def asymmetric_auctions_plots():
         RH_H = [ (1-FH[i])/fH[i] for i in range(len(fH))]
 
         J_L = array(RH_L) - array(B_L)/(g-rf)
+        J_L = array(RH_L) - array(B_L)/(g-rf)
+        J_H = array(RH_H) - array(B_H)/(g-rf)
         J_H = array(RH_H) - array(B_H)/(g-rf)
 
 
