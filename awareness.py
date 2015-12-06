@@ -15,29 +15,6 @@ import decimal
 from decimal import *
 from itertools import accumulate
 
-pwd = '/Users/peitalin/Data/IPO/NASDAQ/'
-
-
-def impresario_price_amendments():
-    df = pd.read_csv(pwd + "df.csv", dtype={'cik':object, 'Year':object, 'SIC':object})
-    # early amenders
-    dfa = df[df.percent_first_price_update.notnull()]
-    # 60 impresarios who amend up, then back down
-    dfi = dfa[(dfa.percent_first_price_update > dfa.percent_final_price_revision) & (dfa.percent_first_price_update >= 0)]
-    ## Underwriters who revise down a little, then down as lot
-    # dfi = dfa[dfa.percent_first_price_update > dfa.percent_final_price_revision]
-
-    dat = dfi
-    plot(dat.delay_in_price_update, dat.percent_first_price_update, '.', label="1st price update")
-    plot(dat.delay_in_price_update, dat.percent_final_price_revision, '.', label="Final price update")
-    plot(dat.delay_in_price_update, dat.close_return, '.', label="Close Return")
-
-    xlim(0, 1.1)
-    ylim(-100, 200)
-    ylabel("% Percent Offer Price Change")
-    xlabel("Delay in 1st price amendment (0 ~ 1)")
-    legend()
-
 
 
 def Phi(l, n, ti, t0):
@@ -274,7 +251,7 @@ def asymmetric_auctions_plots():
         rf = 0.01
         g = .06
         hazrateH = .04
-        hazrateL = .01
+        hazrateL = .02
 
         # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
         print("g upper bound: {}".format(g_upper_bound(hazrateL, rf, kappa, n)))
@@ -432,6 +409,19 @@ def asymmetric_auctions_plots():
     else:
         plt.title(r"kappa = {}; $\tau_L^* + \tau_H^*$".format(k_params[1]))
 
+
+    "Plot 3"
+    plt.subplot(1, len(iter_params), 3)
+    legend(loc='lower right', prop={'size':12})
+    plt.xlabel(r"Low-hazard types: $t_L$")
+    plt.ylabel(r"High-hazard types: $t_H$")
+
+    if plttype=='kappa':
+        plt.title(r"kappa = {}".format(k_params[2]))
+    elif plttype=='tau':
+        plt.title(r"$\tau_L^* + \tau_H^*$")
+    else:
+        plt.title(r"kappa = {}; $\tau_L^* + \tau_H^*$".format(k_params[2]))
 
     plt.suptitle(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $j(t) = MR_H^{-1}(MR_L(t_L))$")
 
