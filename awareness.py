@@ -251,7 +251,7 @@ def asymmetric_auctions_plots():
         rf = 0.01
         g = .06
         hazrateH = .04
-        hazrateL = .02
+        hazrateL = .01
 
         # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
         print("g upper bound: {}".format(g_upper_bound(hazrateL, rf, kappa, n)))
