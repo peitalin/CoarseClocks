@@ -241,7 +241,7 @@ def asymmetric_auctions_plots():
     if plttype == "tau":
         iter_params = tau_params = [kappa, kappa]
     elif plttype == "kappa":
-        iter_params = k_params = [0.25, 0.5, 0.75]
+        iter_params = k_params = [0.3, 0.6]
     elif plttype == "n":
         iter_params = n_params = [10, 25, 40]
 
@@ -251,7 +251,7 @@ def asymmetric_auctions_plots():
         rf = 0.01
         g = .06
         hazrateH = .04
-        hazrateL = .01
+        hazrateL = .02
 
         # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
         print("g upper bound: {}".format(g_upper_bound(hazrateL, rf, kappa, n)))
@@ -294,22 +294,23 @@ def asymmetric_auctions_plots():
         btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
         # Distributional Shift
         btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
-        # Distribution Stretch
-        btimesH = list(linspace(b0(tauL), bi(tauH), nobs+1))[:-1]
 
-        # if 0:
-        #     "distribution stretch"
+        if 0:
+            # Distribution Stretch
             # btimesH = list(linspace(b0(tauL), bi(tauH), nobs+1))[:-1]
+            fH = [f(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
+            FH = [F(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
 
 
         fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
         FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
-        fH = [f(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
-        FH = [F(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
+        fH = [f(hazrateH, n, t) for t in btimesH]
+        FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
 
         if plttype == 'tau' and num == 1:
             fH = [f(hazrateH, n, bi(tauH+tauL), t) for t in btimesH]
             FH = [F(hazrateH, n, bi(tauH+tauL), t) for t in btimesH]
+
 
         if 0:
             # Awareness distributions share the same support however, the posterior burst distributions do not
@@ -359,28 +360,47 @@ def asymmetric_auctions_plots():
             legend(loc="lower right")
 
 
-        # r_t = [r(t, FL, FH, btimesL, btimesH) for t in btimesL]
-        # j_t = [j(t, J_L, J_H, btimesL, btimesH) for t in btimesL]
-
-        r_t = [r(t, FH, FL, btimesH, btimesL) for t in btimesH]
-        j_t = [j(t, J_H, J_L, btimesH, btimesL) for t in btimesH]
+        r_t = [r(t, FL, FH, btimesL, btimesH) for t in btimesL]
+        j_t = [j(t, J_L, J_H, btimesL, btimesH) for t in btimesL]
 
         "Plot t_l on the x-axis"
         plt.subplot(1, len(iter_params), num+1)
-        plt.plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$ (L's aggressive bid in FPA)")
-        plt.plot(btimesH, btimesH, color='black', linestyle=':', linewidth=1, alpha=0.99, label=r"$t_L=t_L, 45^o$")
+        plt.plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$")
+        plt.plot(btimesL, btimesL, color='black', linestyle=':', linewidth=1, alpha=0.99, label=r"$t_H=t_H, 45^o$")
 
-        plt.plot(btimesH, r_t, color=color[2], linestyle="-", linewidth=1, label=r"$r(t) = F_H^{-1}(F_L(t_L))$")
-        plt.plot(btimesH, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_H^{-1}(MR_L(t_L))$")
+        plt.plot(btimesL, r_t, color=color[2], linestyle="-", linewidth=1, label=r"$r(t) = F_L^{-1}(F_H(t_H))$")
+        plt.plot(btimesL, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_L^{-1}(MR_H(t_H))$")
 
         endog_crash = t0 + tauL + n*kappa
         plt.axvline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
                     label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
 
-        plt.axhline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
-        plt.axvline(btimesH[0], linestyle='-', color='grey', linewidth=1.5)
-        plt.xlim(0, btimesH[-1])
-        plt.ylim(0, btimesL[-1])
+        plt.axhline(btimesH[0], linestyle='-', color='grey', linewidth=1.5)
+        plt.axvline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
+        plt.xlim(0, btimesL[-1])
+        plt.ylim(0, btimesH[-1])
+
+
+        if 0 :
+            "high types on x-axis"
+            r_t = [r(t, FH, FL, btimesH, btimesL) for t in btimesH]
+            j_t = [j(t, J_H, J_L, btimesH, btimesL) for t in btimesH]
+
+            plt.subplot(1, len(iter_params), num+1)
+            plt.plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$")
+            plt.plot(btimesH, btimesH, color='black', linestyle=':', linewidth=1, alpha=0.99, label=r"$t_H=t_H, 45^o$")
+
+            plt.plot(btimesH, r_t, color=color[2], linestyle="-", linewidth=1, label=r"$r(t) = F_L^{-1}(F_H(t_H))$")
+            plt.plot(btimesH, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_L^{-1}(MR_H(t_H))$")
+
+            endog_crash = t0 + tauL + n*kappa
+            plt.axvline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
+                        label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
+
+            plt.axhline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
+            plt.axvline(btimesH[0], linestyle='-', color='grey', linewidth=1.5)
+            plt.xlim(0, btimesH[-1])
+            plt.ylim(0, btimesL[-1])
 
 
 
@@ -414,18 +434,18 @@ def asymmetric_auctions_plots():
         plt.title(r"kappa = {}; $\tau_L^* + \tau_H^*$".format(k_params[1]))
 
 
-    "Plot 3"
-    plt.subplot(1, len(iter_params), 3)
-    legend(loc='lower right', prop={'size':12})
-    plt.xlabel(r"Low-hazard types: $t_L$")
-    plt.ylabel(r"High-hazard types: $t_H$")
+    # "Plot 3"
+    # plt.subplot(1, len(iter_params), 3)
+    # legend(loc='lower right', prop={'size':12})
+    # plt.xlabel(r"Low-hazard types: $t_L$")
+    # plt.ylabel(r"High-hazard types: $t_H$")
 
-    if plttype=='kappa':
-        plt.title(r"kappa = {}".format(k_params[2]))
-    elif plttype=='tau':
-        plt.title(r"$\tau_L^* + \tau_H^*$")
-    else:
-        plt.title(r"kappa = {}; $\tau_L^* + \tau_H^*$".format(k_params[2]))
+    # if plttype=='kappa':
+    #     plt.title(r"kappa = {}".format(k_params[2]))
+    # elif plttype=='tau':
+    #     plt.title(r"$\tau_L^* + \tau_H^*$")
+    # else:
+    #     plt.title(r"kappa = {}; $\tau_L^* + \tau_H^*$".format(k_params[2]))
 
     plt.suptitle(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $j(t) = MR_H^{-1}(MR_L(t_L))$")
 
