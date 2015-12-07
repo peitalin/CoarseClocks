@@ -304,7 +304,7 @@ def asymmetric_auctions_plots():
 
         fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
         FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
-        fH = [f(hazrateH, n, t) for t in btimesH]
+        fH = [f(hazrateH, n, bi(tauL), t) for t in btimesH]
         FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
 
         if plttype == 'tau' and num == 1:
