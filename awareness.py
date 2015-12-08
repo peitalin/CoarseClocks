@@ -237,11 +237,13 @@ def asymmetric_auctions_plots():
     plttype = "kappa"
     # plttype = "tau"
     # plttype = "n"
+    shift_or_stretch = "shift"
+    shift_or_stretch = "stretch"
 
     if plttype == "tau":
         iter_params = tau_params = [kappa, kappa]
     elif plttype == "kappa":
-        iter_params = k_params = [0.3, 0.6]
+        iter_params = k_params = [0.4, 0.5]
     elif plttype == "n":
         iter_params = n_params = [10, 25, 40]
 
@@ -249,9 +251,9 @@ def asymmetric_auctions_plots():
     for num, kappa in enumerate(iter_params):
 
         rf = 0.01
-        g = .06
-        hazrateH = .04
-        hazrateL = .02
+        g = .07
+        hazrateH = .05
+        hazrateL = .01
 
         # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
         print("g upper bound: {}".format(g_upper_bound(hazrateL, rf, kappa, n)))
@@ -289,23 +291,22 @@ def asymmetric_auctions_plots():
         # tauH = tau_star(hazrateH, g, rf) + tauL
         # Plus tau: arbitraguer sells out after tau periods, meaning lender
         # becomes aware tau periods after the arbitrageur
-
         print("tauL: {}\ntauH: {}".format(tauL, tauH))
-        btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
-        # Distributional Shift
-        btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
 
-        if 0:
-            # Distribution Stretch
-            # btimesH = list(linspace(b0(tauL), bi(tauH), nobs+1))[:-1]
+        btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
+        fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
+        FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
+
+        if shift_or_stretch == "shift":
+            btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
+            fH = [f(hazrateH, n, bi(tauL), t) for t in btimesH]
+            FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
+
+        elif shift_or_stretch == "stretch":
+            btimesH = list(linspace(b0(tauL), bi(tauH), nobs+1))[:-1]
             fH = [f(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
             FH = [F(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
 
-
-        fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
-        FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
-        fH = [f(hazrateH, n, bi(tauL), t) for t in btimesH]
-        FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
 
         if plttype == 'tau' and num == 1:
             fH = [f(hazrateH, n, bi(tauH+tauL), t) for t in btimesH]
@@ -394,7 +395,7 @@ def asymmetric_auctions_plots():
             plt.plot(btimesH, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_L^{-1}(MR_H(t_H))$")
 
             endog_crash = t0 + tauL + n*kappa
-            plt.axvline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
+            plt.axhline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
                         label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
 
             plt.axhline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
@@ -452,6 +453,11 @@ def asymmetric_auctions_plots():
 
 
 
+
+def maskin_riley():
+
+    [0, 1/(1-z)]
+    [0, 1/(1+z)]
 
 
 
