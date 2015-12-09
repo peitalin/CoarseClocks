@@ -231,6 +231,7 @@ def asymmetric_auctions_plots():
     alphas = [0.4, 0.6, 0.8]
     n_params = [15, 20, 25]
     kappa = 0.5
+    fee = 0
     n=25
     nobs = 2000
 
@@ -240,7 +241,7 @@ def asymmetric_auctions_plots():
     plttype = "fees"
 
     shift_or_stretch = "shift"
-    shift_or_stretch = "stretch"
+    # shift_or_stretch = "stretch"
 
 
     if plttype == "tau":
@@ -250,13 +251,14 @@ def asymmetric_auctions_plots():
     elif plttype == "n":
         iter_params = n_params = [10, 25, 40]
     elif plttype == "fees":
-        iter_params = [False, True]
+        iter_params = fee_params = [0, 0.02]
 
 
-    for num, fee in enumerate(iter_params):
+    for num, kappa in enumerate(iter_params):
+
 
         rf = 0.02
-        g = .07
+        g = .06
         hazrateH = .04
         hazrateL = .01
 
@@ -268,6 +270,7 @@ def asymmetric_auctions_plots():
 
 
         # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
+        print(fee)
         print("g upper bound: {}".format(g_upper_bound(hazrateL, rf, kappa, n)))
         assert g < g_upper_bound(hazrateL, rf, kappa, n)
 
@@ -363,6 +366,7 @@ def asymmetric_auctions_plots():
         J_H = array(B_H)/(g+fee-rf) - array(RH_H)
 
 
+
         if 0:
             plot(btimesL, J_L, color=color[0], linestyle="-",
                     label=r"$type:t_L, \kappa:{}, \eta:{}$".format(kappa, n))
@@ -380,7 +384,7 @@ def asymmetric_auctions_plots():
 
         "Plot t_l on the x-axis"
         plt.subplot(1, len(iter_params), num+1)
-        plt.plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$")
+        # plt.plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$")
         plt.plot(btimesL, btimesL, color='black', linestyle=':', linewidth=1, alpha=0.99, label=r"$t_H=t_H, 45^o$")
 
         plt.plot(btimesL, r_t, color=color[2], linestyle="-", linewidth=1, label=r"$r(t) = F_L^{-1}(F_H(t_H))$")
@@ -396,26 +400,25 @@ def asymmetric_auctions_plots():
         plt.ylim(0, btimesH[-1])
 
 
-        if 0:
-            "high types on x-axis"
-            r_t = [r(t, FH, FL, btimesH, btimesL) for t in btimesH]
-            j_t = [j(t, J_H, J_L, btimesH, btimesL) for t in btimesH]
+        # "high types on x-axis"
+        # r_t = [r(t, FH, FL, btimesH, btimesL) for t in btimesH]
+        # j_t = [j(t, J_H, J_L, btimesH, btimesL) for t in btimesH]
 
-            plt.subplot(1, len(iter_params), num+1)
-            plt.plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$")
-            plt.plot(btimesH, btimesH, color='black', linestyle=':', linewidth=1, alpha=0.99, label=r"$t_H=t_H, 45^o$")
+        # plt.subplot(1, len(iter_params), num+1)
+        # plt.plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$")
+        # plt.plot(btimesH, btimesH, color='black', linestyle=':', linewidth=1, alpha=0.99, label=r"$t_H=t_H, 45^o$")
 
-            plt.plot(btimesH, r_t, color=color[2], linestyle="-", linewidth=1, label=r"$r(t) = F_L^{-1}(F_H(t_H))$")
-            plt.plot(btimesH, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_L^{-1}(MR_H(t_H))$")
+        # plt.plot(btimesH, r_t, color=color[2], linestyle="-", linewidth=1, label=r"$r(t) = F_L^{-1}(F_H(t_H))$")
+        # plt.plot(btimesH, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_L^{-1}(MR_H(t_H))$")
 
-            endog_crash = t0 + tauL + n*kappa
-            # plt.axhline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
-            #             label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
+        # endog_crash = t0 + tauL + n*kappa
+        # # plt.axhline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
+        # #             label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
 
-            plt.axhline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
-            plt.axvline(btimesH[0], linestyle='-', color='grey', linewidth=1.5)
-            plt.xlim(0, btimesH[-1])
-            plt.ylim(0, btimesL[-1])
+        # plt.axhline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
+        # plt.axvline(btimesH[0], linestyle='-', color='grey', linewidth=1.5)
+        # plt.xlim(0, btimesH[-1])
+        # plt.ylim(0, btimesL[-1])
 
 
 
@@ -432,7 +435,7 @@ def asymmetric_auctions_plots():
     elif plttype=='tau':
         plt.title(r"$\tau_L^*$")
     elif plttype=='fees':
-        plt.title(r"kappa = {}, fee={}".format(kappa, fee))
+        plt.title(r"kappa = {}, fee={}, $\lambda=\lambda_H$".format(kappa, fee_params[0]))
     else:
         plt.title(r"kappa = {}; $\tau_L^*$".format(k_params[0]))
 
@@ -448,7 +451,7 @@ def asymmetric_auctions_plots():
     elif plttype=='tau':
         plt.title(r"$\tau_L^* + \tau_H^*$")
     elif plttype=='fees':
-        plt.title(r"kappa = {}, fee={}".format(kappa, fee))
+        plt.title(r"kappa = {}, fee={}, $\lambda=\sqrt{{\lambda_H \lambda_L}}$".format(kappa, fee_params[1]))
     else:
         plt.title(r"kappa = {}; $\tau_L^* + \tau_H^*$".format(k_params[1]))
 
