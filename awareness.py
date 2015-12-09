@@ -237,23 +237,35 @@ def asymmetric_auctions_plots():
     plttype = "kappa"
     # plttype = "tau"
     # plttype = "n"
+    plttype = "fees"
+
     shift_or_stretch = "shift"
     shift_or_stretch = "stretch"
+
 
     if plttype == "tau":
         iter_params = tau_params = [kappa, kappa]
     elif plttype == "kappa":
-        iter_params = k_params = [0.4, 0.5]
+        iter_params = k_params = [0.25, 0.5]
     elif plttype == "n":
         iter_params = n_params = [10, 25, 40]
+    elif plttype == "fees":
+        iter_params = [False, True]
 
 
-    for num, kappa in enumerate(iter_params):
+    for num, fee in enumerate(iter_params):
 
-        rf = 0.01
+        rf = 0.02
         g = .07
-        hazrateH = .05
+        hazrateH = .04
         hazrateL = .01
+
+        if fee:
+            fee = rf/2
+            hazrateH = sqrt(0.04*0.01)
+        else:
+            fee = 0
+
 
         # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
         print("g upper bound: {}".format(g_upper_bound(hazrateL, rf, kappa, n)))
@@ -287,7 +299,7 @@ def asymmetric_auctions_plots():
 
         # burst times
         tauL = tau_star(hazrateL, g, rf)
-        tauH = tau_star(hazrateH, g, rf)
+        tauH = tau_star(hazrateH, g+fee, rf)
         # tauH = tau_star(hazrateH, g, rf) + tauL
         # Plus tau: arbitraguer sells out after tau periods, meaning lender
         # becomes aware tau periods after the arbitrageur
@@ -334,8 +346,9 @@ def asymmetric_auctions_plots():
             plot(btimesH, [g*f for g,f in zip(G, FH)])
 
 
+
         B_L =  [ B(btimesL[i], g, rf, t0=t0) for i in range(len(fL))]
-        B_H =  [ B(btimesH[i], g, rf, t0=t0) for i in range(len(fH))]
+        B_H =  [ B(btimesH[i], g+fee, rf, t0=t0) for i in range(len(fH))]
 
         # HR_L = [ hazrateL/(1-exp(-hazrateL*n*kappa)) for i in range(len(fL))]
         # HR_H = [ hazrateH/(1-exp(-hazrateH*n*kappa)) for i in range(len(fH))]
@@ -343,22 +356,23 @@ def asymmetric_auctions_plots():
         RH_L = [ (1-FL[i])/fL[i] for i in range(len(fL))]
         RH_H = [ (1-FH[i])/fH[i] for i in range(len(fH))]
 
-        J_L = array(RH_L) - array(B_L)/(g-rf)
-        J_H = array(RH_H) - array(B_H)/(g-rf)
-
         # J_L = array(RH_L) - array(B_L)/(g-rf)
         # J_H = array(RH_H) - array(B_H)/(g-rf)
+
+        J_L = array(B_L)/(g-rf) - array(RH_L)
+        J_H = array(B_H)/(g+fee-rf) - array(RH_H)
 
 
         if 0:
             plot(btimesL, J_L, color=color[0], linestyle="-",
                     label=r"$type:t_L, \kappa:{}, \eta:{}$".format(kappa, n))
-            plot(btimesL, J_H, color=color[1], linestyle="-",
+            plot(btimesH, J_H, color=color[1], linestyle="-",
                     label=r"$type:t_H, \kappa:{}, \eta:{}$".format(kappa, n))
             xlabel("Price Burst Times")
             ylabel(r"Virtual Valuation: $J(t)$")
             title(r"Virtual Valuations: $J_L(t_L)= \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)}$")
             legend(loc="lower right")
+
 
 
         r_t = [r(t, FL, FH, btimesL, btimesH) for t in btimesL]
@@ -373,8 +387,8 @@ def asymmetric_auctions_plots():
         plt.plot(btimesL, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_L^{-1}(MR_H(t_H))$")
 
         endog_crash = t0 + tauL + n*kappa
-        plt.axvline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
-                    label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
+        # plt.axhline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
+        #             label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
 
         plt.axhline(btimesH[0], linestyle='-', color='grey', linewidth=1.5)
         plt.axvline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
@@ -382,7 +396,7 @@ def asymmetric_auctions_plots():
         plt.ylim(0, btimesH[-1])
 
 
-        if 0 :
+        if 0:
             "high types on x-axis"
             r_t = [r(t, FH, FL, btimesH, btimesL) for t in btimesH]
             j_t = [j(t, J_H, J_L, btimesH, btimesL) for t in btimesH]
@@ -395,8 +409,8 @@ def asymmetric_auctions_plots():
             plt.plot(btimesH, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_L^{-1}(MR_H(t_H))$")
 
             endog_crash = t0 + tauL + n*kappa
-            plt.axhline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
-                        label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
+            # plt.axhline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
+            #             label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
 
             plt.axhline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
             plt.axvline(btimesH[0], linestyle='-', color='grey', linewidth=1.5)
@@ -417,6 +431,8 @@ def asymmetric_auctions_plots():
         plt.title(r"kappa = {}".format(k_params[0]))
     elif plttype=='tau':
         plt.title(r"$\tau_L^*$")
+    elif plttype=='fees':
+        plt.title(r"kappa = {}, fee={}".format(kappa, fee))
     else:
         plt.title(r"kappa = {}; $\tau_L^*$".format(k_params[0]))
 
@@ -431,6 +447,8 @@ def asymmetric_auctions_plots():
         plt.title(r"kappa = {}".format(k_params[1]))
     elif plttype=='tau':
         plt.title(r"$\tau_L^* + \tau_H^*$")
+    elif plttype=='fees':
+        plt.title(r"kappa = {}, fee={}".format(kappa, fee))
     else:
         plt.title(r"kappa = {}; $\tau_L^* + \tau_H^*$".format(k_params[1]))
 
@@ -454,10 +472,6 @@ def asymmetric_auctions_plots():
 
 
 
-def maskin_riley():
-
-    [0, 1/(1-z)]
-    [0, 1/(1+z)]
 
 
 
