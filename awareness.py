@@ -59,29 +59,32 @@ def f(l, n, ti, t0):
     return top/bottom
 
 
-def H(t0, l=0.1, n=25, ti=25):
-    t0 = float(t0)
-    l = float(l)
-    n = float(n)
-    ti = float(ti)
-    top = exp(l*n) - exp(l*(ti - t0))
-    bottom = exp(l*n) - float(1)
-    return top/bottom
-
-
-def h(t0, l=0.1, n=25, ti=25):
-    t0 = float(t0)
-    l = float(l)
-    n = float(n)
-    ti = float(ti)
-    "l: lambda, n: awareness window, ti: agent's time, t0: time bubble began"
-    top = l*exp(l*(ti-t0))
-    bottom = exp(l*n) - float(1)
-    return top/bottom
 
 
 
 def haz(t=1, dt=0.1):
+    "Discrete vs continuous hazard rate approximation"
+
+    def H(t0, l=0.1, n=25, ti=25):
+        t0 = float(t0)
+        l = float(l)
+        n = float(n)
+        ti = float(ti)
+        top = exp(l*n) - exp(l*(ti - t0))
+        bottom = exp(l*n) - float(1)
+        return top/bottom
+
+
+    def h(t0, l=0.1, n=25, ti=25):
+        t0 = float(t0)
+        l = float(l)
+        n = float(n)
+        ti = float(ti)
+        "l: lambda, n: awareness window, ti: agent's time, t0: time bubble began"
+        top = l*exp(l*(ti-t0))
+        bottom = exp(l*n) - float(1)
+        return top/bottom
+
     t = float(t)
     dt = float(dt)
     S = float(1) - H(t)
@@ -394,10 +397,6 @@ def asymmetric_auctions_plots():
         RH_L = [ (1-FL[i])/fL[i] for i in range(len(fL))]
         RH_H = [ (1-FH[i])/fH[i] for i in range(len(fH))]
 
-        HR_L = [ fH[i+1]/(1-FH[i+1]) for i in range(len(fH-1))]
-        HR_LD =[(FH[i-1]-FH[i])/(btimesH[i]-btimesH[i-1])*FH[i] for i in range(len(fH)-1)]
-
-
         # J_L = array(RH_L) - array(B_L)/(g-rf)
         # J_H = array(RH_H) - array(B_H)/(g-rf)
 
@@ -560,43 +559,90 @@ def plot_figure1_price_path():
     from random import normalvariate
     rnorm = normalvariate
     color = ['dodgerblue', 'mediumorchid', 'palevioletred']
-    dtime = linspace(0, 10, 1000)
-    g = 0.12
-    r = 0.02
-    v = volatility = 0.025
 
-    price_mu = [exp((g-r)*t) for t in dtime]
-    price_random = [exp((g-r)*t) + rnorm(0, v) for t in dtime]
-    plot(dtime, price_mu, color=color[0], linestyle='--', label=r"$p_t=e^{gt}$")
-    plot(dtime, price_random, color=color[0], linestyle='-', linewidth=1, alpha=0.4)
 
-    # (1 - (exp(-0.06) - exp(-0.15))) * exp(0.15)
-    price_B_mu = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) for t in dtime]
-    price_B_random = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) + rnorm(0, v) for t in dtime]
+    def B(t, g, rf, t0=0):
+        "Bubble component of price (fraction)"
+        bubble = 1 - exp( -(g-rf)*(t-t0) )
+        assert bubble <= 1
+        return bubble
+
+
+    n = 10
+    kappa = 0.4
+    dtime = linspace(0, n*2, 5000)
+    g = 0.05
+    rf = 0.03
+    v = volatility = 0.05
+    volatile = False
+
+    price_mu = [exp(g*t) for t in dtime]
+    price_random = [exp(g*t) + rnorm(0, v) for t in dtime]
+    plot(dtime, price_mu, color=color[0], linestyle='-.', label=r"$p_t=e^{gt}$")
+    if volatile:
+        plot(dtime, price_random, color=color[0], linestyle='-', linewidth=1, alpha=0.4)
+
+
+    Bubble = [B(t, g=g, rf=rf, t0=t0) for t in dtime]
+    price_B_mu = array(price_mu) * (1 - array(Bubble))
+    price_B_random = price_B_mu + array([rnorm(0, v) for t in dtime])
     plot(dtime, price_B_mu, color=color[2], linestyle='--', label=r"$(1-\beta(t-t_0))p_t$")
-    plot(dtime, price_B_random, color=color[2], linestyle='-', linewidth=1, alpha=0.4)
+    if volatile:
+        plot(dtime, price_B_random, color=color[2], linestyle='-', linewidth=1, alpha=0.4)
+
 
     # before bubble
-    pretime = linspace(-5,0, 500)
-    preprice_mu = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) for t in pretime]
-    preprice_random = [(exp((g-r)*t) - exp((g-r-0.04)*t) + exp(0)) + rnorm(0, v) for t in pretime]
-    plot(pretime, preprice_mu, color=color[1], linestyle='--')
-    plot(pretime, preprice_random, color=color[1], linestyle='-', linewidth=1, alpha=0.4)
+    pretime = linspace(-10, 0, 500)
+    plot(pretime, [exp(g*t) for t in pretime], color=color[2], linestyle='--')
+    if volatile:
+        plot(pretime, [exp(g*t) + rnorm(0, v) for t in pretime], color=color[2], linestyle='-', linewidth=1, alpha=0.4)
+
 
 
     ylabel(r"$p_t$")
     xlabel("time")
-    xlim(-5,10)
+    xlim(-10, n*2)
 
-    text(7, 1.8, r"$p_t=e^{gt}$", fontsize='14')
-    text(7, 1.25, r"$(1-\beta(t-t_0)) p_t$", fontsize='14')
-    axvline(x=0, linewidth=1, color='k', linestyle='--',
-            label=r"Bubble Start Time", alpha=0.5)
-    axhline(y=0.2, xmin=1/3, xmax=2/3, linewidth=1, color='k', linestyle='-',
-            label=r"Bubble Start Time")
+
+    text(15, 1.9, r"$p_t=e^{gt}$", fontsize='14')
+    text(15, 1.3, r"$(1-\beta(t-t_0)) p_t$", fontsize='14')
+
+    axvline(x=0, linewidth=1, color='k', linestyle=':', alpha=0.8)
+
+
+    # hline, awareness window
+    plot([0, n], [1/n, 1/n], color='black', linewidth=1, linestyle='-')
+
+    # 1st vline, awareness window
+    plot([0, 0], [0, 1/n], color='black', linewidth=1, linestyle='-')
+    text(0 - 0.75, 1/n , r"$t_0$", fontsize='12')
+
+    # \kappa aware vline
+    plot([n*kappa, n*kappa], [0, 1/n], color='black', linewidth=1, linestyle='-')
+    text(n*kappa-1, 1/n, r"$t_0 + \eta\kappa$", fontsize='12')
+
+
+    # 2nd vline, awareness window
+    plot([n, n], [0, 1/n], color='black', linewidth=1, linestyle='-')
+    text(n - 1, 1/n, r"$t_0 + \eta$", fontsize='12')
+    annotate(r"$\frac{1}{\eta}$", xy=(n, 1/n/2), xytext=(n+1/n + 1, 1/n/2), fontsize='12')
+    plot([n+1/n, n+1], [1/n/2, 1/n], color='k', linewidth=0.5)
+
+    # endogenous burst time
+    # Possible price path
+    crash_time = n*kappa + n
+    idx = np.abs(dtime - crash_time).argmin()
+    ppp = array(price_mu[:idx] + list(price_B_mu)[idx:])
+    ppp_random = ppp + array([rnorm(0, v) for t in dtime])
+    plot(dtime, ppp, color='k', linewidth=1, linestyle='-', label=r"Price path for an Endogenous Crash")
+    plot([dtime[idx], dtime[idx]], [0, price_B_mu[idx]], linestyle=':')
+    text(dtime[idx]+ 1/n, 1/n+0.15,"Endogenous Crash:", fontsize='10')
+    text(dtime[idx]+ 1/n, 1/n, r"$t_0 + \tau^* + \eta\kappa$", fontsize='12')
+
 
     tick_params(axis='x', labelbottom='off')
     tick_params(axis='y', labelleft='off')
+    legend(loc="top left")
 
 
 
