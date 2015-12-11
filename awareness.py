@@ -11,8 +11,7 @@ from random import normalvariate
 import seaborn as sb
 
 import pandas as pd
-import decimal
-from decimal import *
+from decimal import Decimal
 from itertools import accumulate
 
 
@@ -59,6 +58,42 @@ def f(l, n, ti, t0):
     bottom = exp(l*n) - 1
     return top/bottom
 
+
+def H(t0, l=0.1, n=25, ti=25):
+    t0 = float(t0)
+    l = float(l)
+    n = float(n)
+    ti = float(ti)
+    top = exp(l*n) - exp(l*(ti - t0))
+    bottom = exp(l*n) - float(1)
+    return top/bottom
+
+
+def h(t0, l=0.1, n=25, ti=25):
+    t0 = float(t0)
+    l = float(l)
+    n = float(n)
+    ti = float(ti)
+    "l: lambda, n: awareness window, ti: agent's time, t0: time bubble began"
+    top = l*exp(l*(ti-t0))
+    bottom = exp(l*n) - float(1)
+    return top/bottom
+
+
+
+def haz(t=1, dt=0.1):
+    t = float(t)
+    dt = float(dt)
+    S = float(1) - H(t)
+    Sdt =  float(1) - H(t+dt)
+
+    cont = h(t)/(float(1) - H(t))
+    discrete = (S - Sdt)/(dt*S)
+    # discrete2 = (H(t+dt) - H(t))/(dt * (float(1) - H(t)))
+    print("conti: {}".format(cont))
+    print("disc1: {}".format(discrete))
+    # print("disc2: {}".format(discrete2))
+    return cont, discrete
 
 
 
@@ -200,7 +235,7 @@ def asymmetric_auctions_plots():
     def round_up(x, places):
         return round(x, places) if round(x, places) >= x else round(x + 1/10**places, places)
 
-    def tau_star(hazrate, g, rf):
+    def tau_star(hazrate, g, rf, kappa):
         assert hazrate/(1-exp(-(hazrate*n*kappa))) > (g-rf)
         # h(t) > (g-rf) otherwise nan (never crashes)
         return 1/(g-rf) * log(hazrate/(hazrate - (g-rf)*(1-exp(-(hazrate*n*kappa))))) - n*kappa
@@ -238,7 +273,7 @@ def asymmetric_auctions_plots():
     plttype = "kappa"
     # plttype = "tau"
     # plttype = "n"
-    plttype = "fees"
+    # plttype = "fees"
 
     shift_or_stretch = "shift"
     # shift_or_stretch = "stretch"
@@ -258,7 +293,7 @@ def asymmetric_auctions_plots():
 
 
         rf = 0.02
-        g = .06
+        g = .07
         hazrateH = .04
         hazrateL = .01
 
@@ -301,8 +336,8 @@ def asymmetric_auctions_plots():
 
 
         # burst times
-        tauL = tau_star(hazrateL, g, rf)
-        tauH = tau_star(hazrateH, g+fee, rf)
+        tauL = tau_star(hazrateL, g, rf, kappa)
+        tauH = tau_star(hazrateH, g+fee, rf, kappa)
         # tauH = tau_star(hazrateH, g, rf) + tauL
         # Plus tau: arbitraguer sells out after tau periods, meaning lender
         # becomes aware tau periods after the arbitrageur
@@ -330,8 +365,8 @@ def asymmetric_auctions_plots():
 
         if 0:
             # Awareness distributions share the same support however, the posterior burst distributions do not
-            plot(btimesL, FL, color=color[0], linestyle='-', label=r"Posterior Burst Times: $F_L(t|t_L)$")
-            plot(btimesH, FH, color=color[1], linestyle='-', label=r"Posterior Burst Times: $F_H(t|t_H)$")
+            plot(btimesL, FL, color=color[1], linestyle='-',linewidth=2, label=r"Posterior Burst Times: $F_L(t|t_L)$")
+            plot(btimesH, FH, color=color[1], linestyle='-',linewidth=2, label=r"Posterior Burst Times: $F_H(t|t_H)$")
             # plot(btimesH, (1-array(FH)), color=color[1], linestyle='-', label=r"Loan supply: $1-F_H(t|t_H)$")
             # plt.axvline(t0+tauL+n*kappa)
             plot(btimesL, fL, color=color[0], linestyle='-', label=r"Posterior Burst Times: $F_L(t|t_L)$")
@@ -359,6 +394,10 @@ def asymmetric_auctions_plots():
         RH_L = [ (1-FL[i])/fL[i] for i in range(len(fL))]
         RH_H = [ (1-FH[i])/fH[i] for i in range(len(fH))]
 
+        HR_L = [ fH[i+1]/(1-FH[i+1]) for i in range(len(fH-1))]
+        HR_LD =[(FH[i-1]-FH[i])/(btimesH[i]-btimesH[i-1])*FH[i] for i in range(len(fH)-1)]
+
+
         # J_L = array(RH_L) - array(B_L)/(g-rf)
         # J_H = array(RH_H) - array(B_H)/(g-rf)
 
@@ -367,7 +406,7 @@ def asymmetric_auctions_plots():
 
 
 
-        if 0:
+        if 1:
             plot(btimesL, J_L, color=color[0], linestyle="-",
                     label=r"$type:t_L, \kappa:{}, \eta:{}$".format(kappa, n))
             plot(btimesH, J_H, color=color[1], linestyle="-",
@@ -470,6 +509,8 @@ def asymmetric_auctions_plots():
     #     plt.title(r"kappa = {}; $\tau_L^* + \tau_H^*$".format(k_params[2]))
 
     plt.suptitle(r"Comparing matched types by rank: $r(t)=F_H^{-1}(F_L(t))$ and virtual values: $j(t) = MR_H^{-1}(MR_L(t_L))$")
+
+
 
 
 
