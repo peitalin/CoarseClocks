@@ -238,7 +238,7 @@ def asymmetric_auctions_plots():
     def round_up(x, places):
         return round(x, places) if round(x, places) >= x else round(x + 1/10**places, places)
 
-    def tau_star(hazrate, g, rf, kappa):
+    def tau_star(hazrate, g, rf, kappa, n):
         assert hazrate/(1-exp(-(hazrate*n*kappa))) > (g-rf)
         # h(t) > (g-rf) otherwise nan (never crashes)
         return 1/(g-rf) * log(hazrate/(hazrate - (g-rf)*(1-exp(-(hazrate*n*kappa))))) - n*kappa
@@ -339,8 +339,8 @@ def asymmetric_auctions_plots():
 
 
         # burst times
-        tauL = tau_star(hazrateL, g, rf, kappa)
-        tauH = tau_star(hazrateH, g+fee, rf, kappa)
+        tauL = tau_star(hazrateL, g, rf, kappa, n)
+        tauH = tau_star(hazrateH, g+fee, rf, kappa, n)
         # tauH = tau_star(hazrateH, g, rf) + tauL
         # Plus tau: arbitraguer sells out after tau periods, meaning lender
         # becomes aware tau periods after the arbitrageur
