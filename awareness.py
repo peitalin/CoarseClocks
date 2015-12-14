@@ -394,9 +394,12 @@ def asymmetric_auctions_plots():
         tt = linspace(0,100, 5000)
         HR_L = [ hazrateL/(1-exp(-hazrateL*n*kappa)) for i in range(len(tt))]
         HR_H = [ hazrateH/(1-exp(-hazrateH*n*kappa)) for i in range(len(tt))]
-        plot(tt, [(g-rf)/B(n*kappa + t, g=g,rf=rf) for t in tt])
-        plot(tt, HR_H, color=color[0], linestyle='--')
-        plot(tt, HR_L, coor=coloir[0], linestyle=':')
+        plot(tt, [(g-rf)/B(n*kappa + t, g=g,rf=rf) for t in tt], color=color[1], label=r"$(g+f-r)/(\beta(\tau^* + \eta\kappa)$")
+        plot(tt, HR_H, color=color[0], linestyle='--', label=r"$\lambda_H/(1-exp(-\lambda\eta\kappa))$")
+        plot(tt, HR_L, color=color[0], linestyle='-.', label=r"$\lambda_L/(1-exp(-\lambda\eta\kappa))$")
+        xlabel(r"$\tau^*$")
+        legend()
+
 
         RH_L = [ (1-FL[i])/fL[i] for i in range(len(fL))]
         RH_H = [ (1-FH[i])/fH[i] for i in range(len(fH))]
