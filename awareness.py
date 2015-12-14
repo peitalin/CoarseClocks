@@ -298,7 +298,7 @@ def asymmetric_auctions_plots():
         rf = 0.02
         g = .07
         hazrateH = .04
-        hazrateL = .01
+        hazrateL = .02
 
         if fee:
             fee = rf/2
@@ -391,9 +391,13 @@ def asymmetric_auctions_plots():
         B_L =  [ B(btimesL[i], g, rf, t0=t0) for i in range(len(fL))]
         B_H =  [ B(btimesH[i], g+fee, rf, t0=t0) for i in range(len(fH))]
 
-        # HR_L = [ hazrateL/(1-exp(-hazrateL*n*kappa)) for i in range(len(fL))]
-        # HR_H = [ hazrateH/(1-exp(-hazrateH*n*kappa)) for i in range(len(fH))]
-        # plot(btimesH, [(g-rf)/B(n*kappa + t, g=g,rf=rf) for t in btimesH])
+        tt = linspace(0,100, 5000)
+        HR_L = [ hazrateL/(1-exp(-hazrateL*n*kappa)) for i in range(len(tt))]
+        HR_H = [ hazrateH/(1-exp(-hazrateH*n*kappa)) for i in range(len(tt))]
+        plot(tt, [(g-rf)/B(n*kappa + t, g=g,rf=rf) for t in tt])
+        plot(tt, HR_H, color=color[0], linestyle='--')
+        plot(tt, HR_L, coor=coloir[0], linestyle=':')
+
         RH_L = [ (1-FL[i])/fL[i] for i in range(len(fL))]
         RH_H = [ (1-FH[i])/fH[i] for i in range(len(fH))]
 
@@ -764,24 +768,6 @@ def plot_lambdas():
 # Shorter awareness windows relative to hazard rate (better synchnronization) leads to more stock recalls
 # More obvious arbitrage opportunities are more likely to cause coarse clocks adverse selection
 
-
-
-
-
-# clock-games are isomorphic to a multi-unit reverse first price auction with a stochastic outside option.
-
-# wolfram comparative statics
-# d/df: swapped r with f
-# \xi - 1/\lambda * log((g+r-f) / (g+r-f-\lambda*B))
-
-# d/d\lambda
-# \xi - 1/x * log((g+f-r) / (g+f-r-x*B))
-# http://www.wolframalpha.com/input/?i=%5Cxi+-+1%2Fx+*+log%28%28g%2Bf-r%29+%2F+%28g%2Bf-r-x*B%29%29
-
-
-# 1/(g+f-r) * log( x / (x - (g+f-r)(1 - e^(x*n*k))))
-
-# 1/(g+x-r) * log( l / (l - (g+x-r)(1 - e^(l*n*k))))
 
 
 
