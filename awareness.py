@@ -62,7 +62,7 @@ def f(l, n, ti, t0):
 
 
 
-def haz(t=1, dt=0.1):
+def haz_approx(l=0.1, t=1, dt=0.1):
     "Discrete vs continuous hazard rate approximation"
 
     def H(t0, l=0.1, n=25, ti=25):
@@ -80,7 +80,7 @@ def haz(t=1, dt=0.1):
         l = float(l)
         n = float(n)
         ti = float(ti)
-        "l: lambda, n: awareness window, ti: agent's time, t0: time bubble began"
+        "l: lambda, n: awareness window, ti: agent's time, t0: time bubble began"' "' "' "'' "' "' "' "'' "' "' "' "'' "' "' "' "'' "' "' "' "'' "' "' "' "' "' "' "' "
         top = l*exp(l*(ti-t0))
         bottom = exp(l*n) - float(1)
         return top/bottom
@@ -93,10 +93,37 @@ def haz(t=1, dt=0.1):
     cont = h(t)/(float(1) - H(t))
     discrete = (S - Sdt)/(dt*S)
     # discrete2 = (H(t+dt) - H(t))/(dt * (float(1) - H(t)))
-    print("conti: {}".format(cont))
-    print("disc1: {}".format(discrete))
-    # print("disc2: {}".format(discrete2))
+    print("conti: {}".format(cont))"" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" """ "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" """ "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "
+    print("disc1: {}".format(discrete))"" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "
+    # print("disc2: {}".format(discrete2))"" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "
     return cont, discrete
+
+
+
+def haz(l, h, n=2):
+    color = ['dodgerblue', 'mediumorchid', 'palevioletred', 'steelblue', 'seagreen']
+    ti = n
+    t0 = ti-n
+    # ## Distribution of bubble begin times: t0
+    tt0 = array(list(linspace(t0, ti, 2000+1))[:-1])
+
+    phiL = [phi(l, n, ti, t0) for t0 in tt0]
+    PhiL = [Phi(l, n, ti, t0) for t0 in tt0]
+    phiH = [phi(h, n, ti, t0) for t0 in tt0]
+    PhiH = [Phi(h, n, ti, t0) for t0 in tt0]
+
+    hzL = array(phiL)/(1 - array(PhiL))
+    hzH = array(phiH)/(1 - array(PhiH))
+
+
+    plot(tt0, hzL, color=color[0], label="hazrateL: {}".format(l), linewidth=1)
+    plot(tt0, hzH, color=color[1], label="hazrateH: {}".format(h), linewidth=1)
+
+    ylim(0,10)
+    legend()
+
+
+
 
 
 
@@ -391,14 +418,14 @@ def asymmetric_auctions_plots():
         B_L =  [ B(btimesL[i], g, rf, t0=t0) for i in range(len(fL))]
         B_H =  [ B(btimesH[i], g+fee, rf, t0=t0) for i in range(len(fH))]
 
-        tt = linspace(0,100, 5000)
-        HR_L = [ hazrateL/(1-exp(-hazrateL*n*kappa)) for i in range(len(tt))]
-        HR_H = [ hazrateH/(1-exp(-hazrateH*n*kappa)) for i in range(len(tt))]
-        plot(tt, [(g-rf)/B(n*kappa + t, g=g,rf=rf) for t in tt], color=color[1], label=r"$(g+f-r)/(\beta(\tau^* + \eta\kappa)$")
-        plot(tt, HR_H, color=color[0], linestyle='--', label=r"$\lambda_H/(1-exp(-\lambda\eta\kappa))$")
-        plot(tt, HR_L, color=color[0], linestyle='-.', label=r"$\lambda_L/(1-exp(-\lambda\eta\kappa))$")
-        xlabel(r"$\tau^*$")
-        legend()
+        # tt = linspace(0,100, 5000)
+        # HR_L = [ hazrateL/(1-exp(-hazrateL*n*kappa)) for i in range(len(tt))]
+        # HR_H = [ hazrateH/(1-exp(-hazrateH*n*kappa)) for i in range(len(tt))]
+        # plot(tt, [(g-rf)/B(n*kappa + t, g=g,rf=rf) for t in tt], color=color[1], label=r"$(g+f-r)/(\beta(\tau^* + \eta\kappa)$")
+        # plot(tt, HR_H, color=color[0], linestyle='--', label=r"$\lambda_H/(1-exp(-\lambda\eta\kappa))$")
+        # plot(tt, HR_L, color=color[1], linestyle='-', label=r"$\lambda_L/(1-exp(-\lambda\eta\kappa))$")
+        # xlabel(r"$\tau^*$")
+        # legend()
 
 
         RH_L = [ (1-FL[i])/fL[i] for i in range(len(fL))]
@@ -660,8 +687,8 @@ def degree_of_preemption():
     g=0.10
     fee=0
     xis = linspace(0, 20, 1000)
-    lhigh = 0.08
-    llow  = 0.05
+    lhigh = 0.15
+    llow  = 0.1
     lavg  = (lhigh + llow) / 2
 
     def B(t, g, rf, t0=0):
@@ -679,27 +706,27 @@ def degree_of_preemption():
     l = llow
     fee = 0.0
     plot(xis, list(map(preemptime, xis)),
-            label=r"$f={},\, \lambda={}$".format(fee,l), linestyle='--', linewidth=1, color=color[0])
+            label=r"$l={},\, \lambda={}$".format(fee,l), linestyle='--', linewidth=1, color=color[0])
 
     l = lhigh
     fee = 0.0
     plot(xis, list(map(preemptime, xis)),
-            label=r"$f={},\, \lambda={}$".format(fee,l), linestyle='-', linewidth=1, color=color[0])
+            label=r"$l={},\, \lambda={}$".format(fee,l), linestyle='-', linewidth=1, color=color[0])
 
     l = lhigh
     fee = 0.01
     plot(xis, list(map(preemptime, xis)),
-            label=r"$f={},\, \lambda={}$".format(fee,l), linestyle='-', linewidth=1, color=color[2])
+            label=r"$l={},\, \lambda={}$".format(fee,l), linestyle='-', linewidth=1, color=color[2])
 
     l = lavg
     fee = 0.0
     plot(xis, list(map(preemptime, xis)),
-            label=r"$f={},\, \lambda={}$ (arbitraguer)".format(fee,l), linestyle='-.', linewidth=1, color='black')
+            label=r"$l={},\, \lambda={}$ (arbitraguer)".format(fee,l), linestyle='-.', linewidth=1, color='black')
 
 
     # plot labels
     legend(loc='lower left')
-    xlabel(r"$\xi$ (an exogenous bubble burst time)")
+    xlabel(r"$\xi$ (bubble burst time)")
     ylabel(r"Degree of Preemption:  $\tau^* - \xi$")
     title(r"Degree of Preemption (Reduction in total waiting time) $g={}$".format(g))
     ylim(-20, 0)
