@@ -112,8 +112,8 @@ def haz(l, h, n=2):
     phiH = [phi(h, n, ti, t0) for t0 in tt0]
     PhiH = [Phi(h, n, ti, t0) for t0 in tt0]
 
-    hzL = array(phiL)/(1 - array(PhiL))
-    hzH = array(phiH)/(1 - array(PhiH))
+    hzL = -array(phiL)/(1 - array(PhiL))
+    hzH = -array(phiH)/(1 - array(PhiH))
 
 
     plot(tt0, hzL, color=color[0], label="hazrateL: {}".format(l), linewidth=1)
@@ -292,7 +292,6 @@ def asymmetric_auctions_plots():
         print(r"J_H = {}".format(J_H[idx2]))
 
 
-
     alphas = [0.4, 0.6, 0.8]
     n_params = [15, 20, 25]
     kappa = 0.5
@@ -306,7 +305,8 @@ def asymmetric_auctions_plots():
     # plttype = "fees"
 
     shift_or_stretch = "shift"
-    # shift_or_stretch = "stretch"
+    shift_or_stretch = "squeeze"
+    shift_or_stretch = "stretch"
 
 
     if plttype == "tau":
@@ -382,10 +382,199 @@ def asymmetric_auctions_plots():
             fH = [f(hazrateH, n, bi(tauL), t) for t in btimesH]
             FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
 
-        elif shift_or_stretch == "stretch":
+        elif shift_or_stretch == "squeeze":
             btimesH = list(linspace(b0(tauL), bi(tauH), nobs+1))[:-1]
             fH = [f(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
             FH = [F(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
+
+        elif shift_or_stretch == "stretch":
+            btimesH = list(linspace(b0(tauL), bi(tauH), nobs+1))[:-1]
+            fH = [f(hazrateH, n, bi(tauL), t) for t in btimesH]
+            FH = [F(hazrateH, n, bi(tauL), t) for t in btimesH]
+
+
+        if plttype == 'tau' and num == 1:
+            fH = [f(hazrateH, n, bi(tauH+tauL), t) for t in btimesH]
+            FH = [F(hazrateH, n, bi(tauH+tauL), t) for t in btimesH]
+
+
+        if 0:
+            # Awareness distributions share the same support however, the posterior burst distributions do not
+            plot(btimesL, FL, color=color[1], linestyle='-',linewidth=2, label=r"Posterior Burst Times: $F_L(t|t_L)$")
+            plot(btimesH, FH, color=color[1], linestyle='-',linewidth=2, label=r"Posterior Burst Times: $F_H(t|t_H)$")
+            # plot(btimesH, (1-array(FH)), color=color[1], linestyle='-', label=r"Loan supply: $1-F_H(t|t_H)$")
+            # plt.axvline(t0+tauL+n*kappa)
+            plot(btimesL, fL, color=color[0], linestyle='-', label=r"Posterior Burst Times: $F_L(t|t_L)$")
+            plot(btimesH, fH, color=color[1], linestyle='-', label=r"Posterior Burst Times: $F_H(t|t_H)$")
+            plot(tt0L,  PhiL, color=color[0], linestyle='--',  label=r"Awareness CDF: $\Phi_L(t_0|t_L)$")
+            plot(tt0H,  PhiH, color=color[1], linestyle='--',  label=r"Awareness CDF: $\Phi_H(t_0|t_H)$")
+            legend(loc="lower right")
+            title(r"Awareness and Burst Time distributions" +
+                "($\kappa={}$, $\lambda_H={}$, $\lambda_L={}$)".format(kappa, hazrateH,hazrateL))
+            xlabel("Time")
+
+            plot(btimesH, array(FL) - array(FL)**2, label=r"Adverse Selection cost")
+            plot(btimesL, np.convolve(1-array(fH), fL, mode='same'))
+            G = 1 - array(FH)
+            plot(btimesH, [g*f for g,f in zip(G, FH)])
+
+        if 0:
+            tt = linspace(0,100, 5000)
+            HR_L = [ hazrateL/(1-exp(-hazrateL*n*kappa)) for i in range(len(tt))]
+            HR_H = [ hazrateH/(1-exp(-hazrateH*n*kappa)) for i in range(len(tt))]
+            plot(tt, [(g-rf)/B(n*kappa + t, g=g,rf=rf) for t in tt], color=color[1], label=r"$(g+f-r)/(\beta(\tau^* + \eta\kappa)$")
+            plot(tt, HR_H, color=color[0], linestyle='--', label=r"$\lambda_H/(1-exp(-\lambda\eta\kappa))$")
+            plot(tt, HR_L, color=color[1], linestyle='-', label=r"$\lambda_L/(1-exp(-\lambda\eta\kappa))$")
+            xlabel(r"$\tau^*$")
+            legend()
+
+
+
+        B_L =  [ B(btimesL[i], g, rf, t0=t0) for i in range(len(fL))]
+        B_H =  [ B(btimesH[i], g+fee, rf, t0=t0) for i in range(len(fH))]
+
+
+        RH_L = [ (1-FL[i])/fL[i] for i in range(len(fL))]
+        RH_H = [ (1-FH[i])/fH[i] for i in range(len(fH))]
+
+        J_L = array(B_L)/(g-rf) - array(RH_L)
+        J_H = array(B_H)/(g+fee-rf) - array(RH_H)
+
+
+
+        if 0:
+            plot(btimesL, J_L, color=color[0], linestyle="-",
+                    label=r"$type:t_L, \kappa:{}, \eta:{}$".format(kappa, n))
+            plot(btimesH, J_H, color=color[1], linestyle="-",
+                    label=r"$type:t_H, \kappa:{}, \eta:{}$".format(kappa, n))
+            xlabel("Price Burst Times")
+            ylabel(r"Virtual Valuation: $J(t)$")
+            title(r"Virtual Valuations: $J_L(t_L)= \frac{\beta(t_L - t_0)}{g-r} - \frac{1-F_L(t)}{f_L(t)}$")
+            legend(loc="lower right")
+
+
+
+        r_t = [r(t, FL, FH, btimesL, btimesH) for t in btimesL]
+        j_t = [j(t, J_L, J_H, btimesL, btimesH) for t in btimesL]
+
+        "Plot t_l on the x-axis"
+        plt.subplot(1, len(iter_params), num+1)
+        # plt.plot(btimesL, btimesH, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$")
+        plt.plot(btimesL, btimesL, color='black', linestyle=':', linewidth=1, alpha=0.99, label=r"$t_H=t_H, 45^o$")
+
+        plt.plot(btimesL, r_t, color=color[2], linestyle="-", linewidth=1, label=r"$r(t) = F_L^{-1}(F_H(t_H))$")
+        plt.plot(btimesL, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_L^{-1}(MR_H(t_H))$")
+
+        endog_crash = t0 + tauL + n*kappa
+        # plt.axhline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
+        #             label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
+
+        plt.axhline(btimesH[0], linestyle='-', color='grey', linewidth=1.5)
+        plt.axvline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
+        plt.xlim(0, btimesL[-1])
+        plt.ylim(0, btimesH[-1])
+
+
+
+    alphas = [0.4, 0.6, 0.8]
+    n_params = [15, 20, 25]
+    kappa = 0.5
+    fee = 0
+    n=25
+    nobs = 2000
+
+    plttype = "kappa"
+    # plttype = "tau"
+    # plttype = "n"
+    # plttype = "fees"
+
+    shift_or_stretch = "shift"
+    shift_or_stretch = "squeeze"
+    shift_or_stretch = "stretch"
+
+
+    if plttype == "tau":
+        iter_params = tau_params = [kappa, kappa]
+    elif plttype == "kappa":
+        iter_params = k_params = [0.25, 0.5]
+    elif plttype == "n":
+        iter_params = n_params = [10, 25, 40]
+    elif plttype == "fees":
+        iter_params = fee_params = [0, 0.02]
+
+
+    for num, kappa in enumerate(iter_params):
+
+
+        rf = 0.02
+        g = .07
+        hazrateH = .04
+        hazrateL = .02
+
+        if fee:
+            fee = rf/2
+            hazrateH = sqrt(0.04*0.01)
+        else:
+            fee = 0
+
+
+        # g = g_upper_bound(hazrateL, rf, kappa) - 0.001
+        print(fee)
+        print("g upper bound: {}".format(g_upper_bound(hazrateL, rf, kappa, n)))
+        assert g < g_upper_bound(hazrateL, rf, kappa, n)
+
+        ti = n
+        t0 = ti-n
+        # ## Distribution of bubble begin times: t0
+        tt0L = list(linspace(t0, ti, nobs+1))[:-1]
+        tt0H = list(linspace(t0, ti, nobs+1))[:-1]
+
+        ## Bubble start time posteriors: Phi(t0|ti)
+        phiL = [phi(hazrateL, n, ti, t0) for t0 in tt0L]
+        PhiL = [Phi(hazrateL, n, ti, t0) for t0 in tt0L]
+
+        phiH = [phi(hazrateH, n, ti, t0) for t0 in tt0H]
+        PhiH = [Phi(hazrateH, n, ti, t0) for t0 in tt0H]
+
+
+
+
+        if ti < n*kappa:
+            b0 = lambda tau: t0 + tau + n*kappa
+            bi = lambda tau: ti + tau + n*kappa
+        else:
+            b0 = lambda tau: t0 + tau
+            bi = lambda tau: ti + tau
+        # Levin notes: Bubbles and Crashes page 6
+
+
+
+        # burst times
+        tauL = tau_star(hazrateL, g, rf, kappa, n)
+        tauH = tau_star(hazrateH, g+fee, rf, kappa, n)
+        # tauH = tau_star(hazrateH, g, rf) + tauL
+        # Plus tau: arbitraguer sells out after tau periods, meaning lender
+        # becomes aware tau periods after the arbitrageur
+        print("tauL: {}\ntauH: {}".format(tauL, tauH))
+
+        btimesL = list(linspace(b0(tauL), bi(tauL), nobs+1))[:-1]
+        fL = [f(hazrateL, n, bi(tauL), t) for t in btimesL]
+        FL = [F(hazrateL, n, bi(tauL), t) for t in btimesL]
+
+        if shift_or_stretch == "shift":
+            btimesH = list(linspace(b0(tauH), bi(tauH), nobs+1))[:-1]
+            fH = [f(hazrateH, n, bi(tauL), t) for t in btimesH]
+            FH = [F(hazrateH, n, bi(tauH), t) for t in btimesH]
+
+        elif shift_or_stretch == "squeeze":
+            btimesH = list(linspace(b0(tauL), bi(tauH), nobs+1))[:-1]
+            fH = [f(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
+            FH = [F(hazrateH, bi(tauH) - b0(tauL), bi(tauH), t) for t in btimesH]
+
+        elif shift_or_stretch == "stretch":
+            btimesH = list(linspace(b0(tauL), bi(tauH), nobs+1))[:-1]
+            fH = [f(hazrateH, n, bi(tauL), t) for t in btimesH]
+            FH = [F(hazrateH, n, bi(tauL), t) for t in btimesH]
 
 
         if plttype == 'tau' and num == 1:
@@ -470,27 +659,6 @@ def asymmetric_auctions_plots():
         plt.axvline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
         plt.xlim(0, btimesL[-1])
         plt.ylim(0, btimesH[-1])
-
-
-        # "high types on x-axis"
-        # r_t = [r(t, FH, FL, btimesH, btimesL) for t in btimesH]
-        # j_t = [j(t, J_H, J_L, btimesH, btimesL) for t in btimesH]
-
-        # plt.subplot(1, len(iter_params), num+1)
-        # plt.plot(btimesH, btimesL, color='black', linestyle='--', alpha=0.4, label=r"$j_1(t)$")
-        # plt.plot(btimesH, btimesH, color='black', linestyle=':', linewidth=1, alpha=0.99, label=r"$t_H=t_H, 45^o$")
-
-        # plt.plot(btimesH, r_t, color=color[2], linestyle="-", linewidth=1, label=r"$r(t) = F_L^{-1}(F_H(t_H))$")
-        # plt.plot(btimesH, j_t, color=color[3], linestyle="-", linewidth=1, label=r"$j(t) = MR_L^{-1}(MR_H(t_H))$")
-
-        # endog_crash = t0 + tauL + n*kappa
-        # # plt.axhline(endog_crash, linewidth=1, linestyle='-.', alpha=0.9, color='black',
-        # #             label=r"burst time: $t_0 + \tau^* + \eta*\kappa$")
-
-        # plt.axhline(btimesL[0], linestyle='-', color='grey', linewidth=1.5)
-        # plt.axvline(btimesH[0], linestyle='-', color='grey', linewidth=1.5)
-        # plt.xlim(0, btimesH[-1])
-        # plt.ylim(0, btimesL[-1])
 
 
 
