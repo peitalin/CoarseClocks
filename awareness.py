@@ -747,13 +747,13 @@ def plot_lambdas():
 
     ti=0
     n=10
-    ltrue = [Decimal(0.2), Decimal(0.015)]
+    ltrue = [Decimal(0.5), Decimal(0.01)]
 
     for j in [1,0]:
-        for i in range(50):
+        for i in range(100):
             color = ['dodgerblue', 'palevioletred']
             # h, l = ltrue[0], ltrue[1]
-            h, l = Decimal(0.1), Decimal(0.05)
+            h, l = Decimal(0.2), Decimal(0.1)
             lprior = Decimal((h + l)/2)
             # Draw random samples
             num = poisson(ltrue[j] , n*100)
