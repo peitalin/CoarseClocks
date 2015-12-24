@@ -725,34 +725,35 @@ def degree_of_preemption():
 
 
 def plot_lambdas():
+
     # (h-l) / (1 + ((h-o)/(o-l)) * exp((h-l)*t) * exp(-n*log(h/l)))
     from numpy.random import poisson
 
     def lam(t, num, lp=(2+1)/2, h=2, l=1):
         "lp: lam prior, h: lam_high, l: lam_low"
 
-        def ln(x):
-            return x.ln()
+        ln = lambda x: x.ln()
+        "Must use Decimal, otherwise rounding error in prior, l=lp"
+        t, lp, h, l = map(Decimal, [t, lp, h, l])
+        num = Decimal(int(num))
+        top = h - l
+        bottom = 1 + (h - lp)/(lp - l) * exp((h-l)*t - num*(h/l))
+        return l + top/bottom
 
-    # Must use Decimal, otherwise rounding error in prior, l=lp
-    t, lp, h, l = map(Decimal, [t, lp, h, l])
-    num = Decimal(int(num))
-    top = h - l
-    bottom = 1 + (h - lp)/(lp - l) * exp((h-l)*t - num*(h/l))
-    return l + top/bottom
+
     # PICK j=1 or j=0
     j=0
 
 
     ti=0
     n=10
-    ltrue = [Decimal(0.2), Decimal(0.01)]
+    ltrue = [Decimal(0.2), Decimal(0.015)]
 
     for j in [1,0]:
         for i in range(50):
             color = ['dodgerblue', 'palevioletred']
             # h, l = ltrue[0], ltrue[1]
-            h, l = Decimal(0.1), Decimal(0.02)
+            h, l = Decimal(0.1), Decimal(0.05)
             lprior = Decimal((h + l)/2)
             # Draw random samples
             num = poisson(ltrue[j] , n*100)
