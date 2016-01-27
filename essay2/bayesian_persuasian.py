@@ -17,27 +17,7 @@ wstar = w * 1.5
 astar = alpha * w + (1-alpha) * wstar
 
 
-
-
-def u(a, w):
-    "utility of sender/underwriter"
-    return -(a - w)**2
-
-def v1(a, astar):
-    "utility of receiver/issuer"
-    return -(a - astar)**2
-
-def v2(a, w, b):
-    "Crawford-Sobel utility of receiver"
-    return -(a - (w - b))**2
-
-
-
-
-
-
-
-def v3(mu, k):
+def a3(mu, k):
     if mu < k/4:
         return 0
     elif k/4 <= mu < k/2:
@@ -45,23 +25,24 @@ def v3(mu, k):
     else:
         return (1+mu)*mu
 
-
-def v4(mu, k, l=2.25):
-    if mu > 0:
-        return mu ** k
+def v(a, w, k):
+    if a*w > k:
+        return a*w - a**2
     else:
-        return -l * (negative(mu) ** k)
-    # (with a typical a = 0.88 and l = 2.25)
+        return -(a**2)
 
 
-def v5(mu, k, l=2.25):
-    if mu < 0:
-        return negative(l) * (negative(mu) ** k)
-    elif mu < 1/l:
-        return mu ** k
-    else:
-        return mu ** (w/l)
-    # (with a typical a = 0.88 and l = 2.25)
+def a(mu):
+    w = (1+mu)
+    if v
+
+
+plot(A, [v(a, w=1, k=1.2) for a in A], linestyle='--')
+plot(A, [v(a, w=2, k=1.2) for a in A], linestyle='-')
+
+for ww in linspace(1.1, 1.9, 9):
+    plot(A, [v(a, w=ww, k=1.2) for a in A], linestyle=':')
+
 
 
 
@@ -71,56 +52,72 @@ We are interesting in the way the equilibrium depend on the extent of preference
 Increase in alpha or decrease in w_star makes preferences more aligned according to the definition in Section IV
 """
 
-# plot(A, [u(a,w) for a in A])
-# plot(A, [v(a,astar) for a in A])
-# plot(A, [v2(a, w, b=w/4) for a in A], linestyle='--')
-# plot(A, [v2(a, w, b=w/2) for a in A], linestyle=':')
-
-
-
-
-def u2(a, mu, k=0.5, l=2.25):
-    "Generalized prospect theory function with k as reference point"
-    "k is the threshold parameter:"
-    x = a * (1+mu) - k
-    ## w = {1, 2}; so x in [0, 2], then minus 1 means x in [-1, 1]
-    if x > k:
-        return ((x) ** k) - a**2
-    else:
-        if x < 0:
-            return  -l * ((-x) ** k) - a**2
-        elif x >= 0:
-            return x ** k - a**2
-
-
-def u2(a, mu, k=0.5, l=2.25):
-    "Generalized prospect theory function with k as reference point"
-    "k is the threshold parameter:"
-    x = a * (1+mu) - k
-    ## w = {1, 2}; so x in [0, 2], then minus 1 means x in [-1, 1]
-    if x > k:
-        return ((x) ** k) - a**2
-    else:
-        if x < 0:
-            return  -l * ((-x) ** k) - a**2
-        elif x >= 0:
-            return x ** k - a**2
 
 
 
 A = [float(n) for n in linspace(0, 1, 1000)]
 l=2.2
-# k=1.1
 
-plot(A, [u2(a, mu=0.1, k=k, l=l) for a in A], linestyle='-', label='Pr(good)=0.1')
-plot(A, [u2(a, mu=0.5, k=k, l=l) for a in A], linestyle='--', label='Pr(good)=0.5')
-plot(A, [u2(a, mu=0.9, k=k, l=l) for a in A], linestyle='-.', label='Pr(good)=0.9')
+
+
+def u2(a, w, k=0.5, l=2.25):
+    "Generalized prospect theory function with k as reference point"
+    "k is the threshold parameter:"
+    x = a * w - k
+    if x >= 0:
+        return x**k - a**2
+    elif x < 0:
+            return  -l * (-x)**k - a**2
+
+
+def u2(a, w, k=0.5, l=2.25):
+    "Generalized prospect theory function with k as reference point"
+    "k is the threshold parameter:"
+    x = a * w - k
+    if x >= 0:
+        return x - a**2
+    elif x < 0:
+            return  -l * (-x)**k - a**2
+
+# utility function must be function of actions and state ONLY
+plot(A, [u2(a, w=1, k=k, l=l) for a in A], linestyle='-', label='w=1')
+plot(A, [u2(a, w=2, k=k, l=l) for a in A], linestyle='--', label='w=2')
+for ww in linspace(1.2, 1.8, 4):
+    plot(A, [u2(a, w=ww, k=k, l=l) for a in A], linestyle='-.', label='w={}'.format(ww))
 legend()
+# for low levels of k, both utility functions have a positive point
+# for high levels of k, only w=2 has a position point.
+
+
+def action(a, mu, k):
+    x = a * (1+mu) - k
+    if x >= 0:
+        return x**k - a**2
+    elif x < 0:
+            return  -l * (-x)**k - a**2
+# return probability (mu) weighted utility and characterize maximum (a*)
+
+
+
+
+def u2(a, mu, k=0.5, l=2.25):
+    "Generalized prospect theory function with k as reference point"
+    "k is the threshold parameter:"
+    x = a * (1+mu) - k
+    ## w = {1, 2}; so x in [0, 2], then minus 1 means x in [-1, 1]
+    if x > k:
+        return ((x) ** k) - a**2
+    else:
+        if x < 0:
+            return  -l * ((-x) ** k) - a**2
+        elif x >= 0:
+            return x ** k - a**2
 
 
 
 
 
+# tenure example in Gentzkow and Kamenica (2011)
 def u(a, mu, k=1.5):
     # (1+mu) = (mu*2 + (1-mu)*1) = E[w]
     effort = negative(a**2)
