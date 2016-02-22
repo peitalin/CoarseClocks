@@ -11,23 +11,21 @@ import seaborn.apionly as sb
 import statsmodels.api as sm
 import theano.tensor as tt
 
-from pymc3.backends import SQLite
-from pymc3.backends.sqlite import load
 
 from sklearn import preprocessing
 from numpy import exp, e, log
 from math import factorial
+from matplotlib.offsetbox import AnnotationBbox, TextArea
 
 colors = sb.color_palette("muted")
-
-
 BASEDIR = os.path.join(os.path.expanduser("~"), "Data", "IPO", "NASDAQ",)
 FINALJSON = json.loads(open(BASEDIR + '/final_json.txt').read())
 
 df = pd.read_csv(BASEDIR + "/df.csv", dtype={'cik':object, 'Year':object, 'SIC':object})
 df.set_index("cik", inplace=True)
 df.drop(['1087294', '1344376'], inplace=1) # 1st update took longer than a year
-df = df[df.amends != "None"]
+# dfa = df[df.amends != "None"]
+# df = df[df.amends != "None"]
 ciks = list(df.index)
 
 df['days_to_first_price_update'] = [-999 if np.isnan(x) else x for x in  df.days_to_first_price_update]
@@ -47,13 +45,121 @@ df['BAA Spread']= df.BAA_yield_changes
 df['FF49 Industry'] = df.FF49_industry
 
 
+dup = df[df.amends == "Up"]
+ddown = df[df.amends == "Down"]
+
+
 def rgb_to_hex(rgb):
     rgb = map(lambda x: int(max(0, min(x, 255)) * 255), rgb)
     return "#{0:02x}{1:02x}{2:02x}".format(*rgb)
 
 blue = rgb_to_hex(sb.color_palette("deep")[0])
-red = rgb_to_hex(sb.color_palette("deep")[2])
+# red = rgb_to_hex(sb.color_palette("deep")[2])
+red = '#880000' # Crimson red
 purple = rgb_to_hex(sb.color_palette("deep")[3])
+
+
+
+def posterior_predictive_check():
+
+    dfa = df[df.amends != "None"]
+    y = dfa['days_to_first_price_update'].values
+    yup = dfa[dfa.amends == 'Up']['days_to_first_price_update'].values
+    ydown = dfa[dfa.amends == 'Down']['days_to_first_price_update'].values
+    #### Import y-pred from RStan
+    # y_pred = np.asarray(pd.read_fwf('ypred_m5.rdat')) # brms hurdle model
+    y_pred = np.asarray(pd.read_fwf('ypred_m6.rdat')) # brms negbin trunc zero
+    # y_pred = np.asarray(pd.read_fwf('ypred_mm7.rdat')) # rstanarm negbin
+
+    # pp_check: compare distibutions of test statistics T(y) vs. T(yrep)
+    test_stat, tname = np.mean, 'Mean'
+    test_stat, tname = np.min, 'Min'
+    test_stat, tname = np.max, 'Max'
+    test_stat, tname = np.median, 'Median'
+    test_stat, tname = np.std, 'St. Dev.'
+
+    fig = plt.figure(figsize=(10,8))
+    fig.add_subplot(111)
+    test_stats_rep = [test_stat(yy) for yy in y_pred]
+    bayes_pval = round(len([1 for yrep in test_stats_rep if yrep > test_stat(y)]) / len(test_stats_rep), 3)
+    pval = r"$Pr(T(y_{{rep}}) > T(y_{{obs}}) | y_{{obs}}) = {}$".format(bayes_pval)
+    ax0 = sb.distplot(test_stats_rep, kde=False, label=r"$T(y_{rep})$")
+    ax0.axvline(test_stat(y), color=blue, linewidth=4, label=r"$T(y_{obs})$")
+    ab = AnnotationBbox(TextArea(pval,
+            textprops={'fontsize':14}), (900, 60),
+            xycoords='figure points',
+            bboxprops={'boxstyle': 'square', 'fc':'#efefef', 'ec': '#9f9f9f'})
+    ax0.add_artist(ab)
+    plt.title("Test statistic: {}".format(tname))
+    plt.legend(fontsize=14)
+    plt.savefig("fig-teststat-{}".format(test_stat.__name__))
+
+
+    # Posterior Predictive Distributions
+    # jointplot = 0
+    jointplot = 1
+    if jointplot:
+        fig = plt.figure(figsize=(10,8))
+        ax1 = fig.add_subplot(311)
+        x_lim=120
+        _ = plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.7, color=red)
+        _ = plt.title('Panel A: Distribution of Observed Data', fontsize='large')
+
+        y = dfa['days_to_first_price_update'].values
+        ax1.axvline(np.mean(y), linestyle='-', color='black', label='Mean')
+        ax1.axvline(np.percentile(y, 50), linestyle='--', color='black', label='Median')
+        ax1.axvline(np.percentile(y, 5), linestyle='-.', color='black', label=r'$5^{th}$ and $95^{th}$ Percentile')
+        ax1.axvline(np.percentile(y, 95), linestyle='-.', color='black')
+    else:
+        fig = plt.figure(figsize=(10,8))
+        ax1 = fig.add_subplot(311)
+        x_lim=120
+        y = yup
+        _ = plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.6, color=blue)
+        _ = plt.title('Panel A: Distribution of Observed Data', fontsize='large')
+        ax1.axvline(np.mean(y), linestyle='-', color=blue, label='Mean')
+        ax1.axvline(np.percentile(y, 50), linestyle='--', color=blue, label='Median')
+        # ax1.axvline(np.percentile(y, 5), linestyle='-.', color=blue, label=r'$5^{th}$ and $95^{th}$ Percentile')
+        # ax1.axvline(np.percentile(y, 95), linestyle='-.', color=blue)
+
+        ax1 = fig.add_subplot(311)
+        y = ydown
+        _ = plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.6, color=purple)
+        _ = plt.title('Panel A: Distribution of Observed Data', fontsize='large')
+        ax1.axvline(np.mean(y), linestyle='-', color=purple, label='Mean')
+        ax1.axvline(np.percentile(y, 50), linestyle='--', color=purple, label='Median')
+        # ax1.axvline(np.percentile(y, 5), linestyle='-.', color=purple, label=r'$5^{th}$ and $95^{th}$ Percentile')
+        # ax1.axvline(np.percentile(y, 95), linestyle='-.', color=purple)
+
+
+    ax2 = fig.add_subplot(312)
+    ypred2 = y_pred[-300:-200:20]
+    ax2.axvline(np.mean(ypred2), linestyle='-', color='black', label='Mean')
+    ax2.axvline(np.percentile(ypred2, 50), linestyle='--', color='black', label='Median')
+    ax2.axvline(np.percentile(ypred2, 5), linestyle='-.', color='black', label=r'$5^{th}$ and $95^{th}$ Percentile')
+    ax2.axvline(np.percentile(ypred2, 95), linestyle='-.', color='black')
+    _ = [plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.2, color=blue) for y in ypred2]
+    _ = plt.xlim(1, x_lim)
+    _ = plt.ylabel('Frequency')
+    _ = plt.title('Panel B: Posterior Predictive Distribution (#1)', fontsize='large')
+
+
+    ax3 = fig.add_subplot(313)
+    ypred3 = y_pred[-300:-200:20]
+    ax3.axvline(np.mean(ypred3), linestyle='-', color='black', label='Mean')
+    ax3.axvline(np.percentile(ypred3, 50), linestyle='--', color='black', label='Median')
+    ax3.axvline(np.percentile(ypred3, 5), linestyle='-.', color='black', label=r'$5^{th}$ and $95^{th}$ Percentile')
+    ax3.axvline(np.percentile(ypred3, 95), linestyle='-.', color='black')
+    _ = [plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.2, color=blue) for y in ypred3]
+    _ = plt.xlim(1, x_lim)
+    _ = plt.xlabel('Days to Price Amendment')
+    _ = plt.title('Panel C: Posterior Predictive Distribution (#2)', fontsize='large')
+    plt.legend(fontsize='small')
+
+    if jointplot:
+        plt.savefig('figA_posterior-pred-check')
+    else:
+        plt.savefig('figA_posterior-pred-check2')
 
 
 
@@ -69,14 +175,15 @@ def mixed_effects():
     classes = 'FF49_industry'
     # classes = 'underwriter_tier'
     # classes = 'amends'
-    classes = 'amends'
+
     print("Grouping by: {}".format(classes))
 
+    FF49_industry = le.fit_transform(df['FF49_industry'])
     class_idx = le.fit_transform(df[classes])
     n_classes = len(le.classes_)
 
 
-    NSamples = 100000
+    NSamples = 50000
     burn = NSamples/10
     thin = 2
 
@@ -85,8 +192,8 @@ def mixed_effects():
             '#Syndicate Members',
             '#Lead Underwriters',
             'Underwriter Rank',
-            'FF49 Industry',
-            # 'Amends Down',
+            # 'FF49 Industry',
+            'Amends Down',
             '#S1A Amendments',
             'Share Overhang',
             'log(1+Sales)',
@@ -109,36 +216,36 @@ def mixed_effects():
         # Parameters:
         intercept = pm.Gamma('Intercept', alpha=.1, beta=.1, shape=n_classes)
 
-        beta_underwriter_syndicate_size = pm.Normal('#Syndicate Members', mu=0, sd=100)
-        beta_underwriter_num_leads = pm.Normal('#Lead Underwriters', mu=0, sd=100, shape=n_classes)
-        beta_underwriter_rank_avg = pm.Normal('Underwriter Rank', mu=0, sd=100)
-        beta_num_SEC_amendments = pm.Normal('#S1A Amendments', mu=0, sd=100)
-        beta_FF49_industry = pm.Normal('FF49 Industry', mu=0, sd=100)
-        # beta_amends_down = pm.Normal('Amends Down', mu=0, sd=100)
-        beta_share_overhang = pm.Normal('Share Overhang', mu=0, sd=100)
-        beta_log_sales = pm.Normal('log(1+Sales)', mu=0, sd=100)
-        beta_log_proceeds = pm.Normal('log(Proceeds)', mu=0, sd=100)
-        beta_CASI = pm.Normal('CASI', mu=0, sd=100)
-        # beta_media_1st_pricing = pm.Normal('media_1st_pricing', mu=0, sd=100)
-        # beta_VC = pm.Normal('VC', mu=0, sd=100)
-        beta_BAA_spread = pm.Normal('BAA Spread', mu=0, sd=100)
-        beta_M3_initial_returns = pm.Normal('IPO Market Returns', mu=0, sd=100)
-        beta_M3_indust_rets = pm.Normal('Industry Returns', mu=0, sd=100)
+        beta_underwriter_syndicate_size = pm.Normal('#Syndicate Members', mu=0, sd=20)
+        beta_underwriter_num_leads = pm.Normal('#Lead Underwriters', mu=0, sd=20)
+        beta_underwriter_rank_avg = pm.Normal('Underwriter Rank', mu=0, sd=20)
+        beta_num_SEC_amendments = pm.Normal('#S1A Amendments', mu=0, sd=20)
+        # beta_FF49_industry = pm.Normal('FF49 Industry', mu=0, sd=20)
+        beta_amends_down = pm.Normal('Amends Down', mu=0, sd=20)
+        beta_share_overhang = pm.Normal('Share Overhang', mu=0, sd=20)
+        beta_log_sales = pm.Normal('log(1+Sales)', mu=0, sd=20)
+        beta_log_proceeds = pm.Normal('log(Proceeds)', mu=0, sd=20)
+        beta_CASI = pm.Normal('CASI', mu=0, sd=20)
+        # beta_media_1st_pricing = pm.Normal('media_1st_pricing', mu=0, sd=20)
+        # beta_VC = pm.Normal('VC', mu=0, sd=20)
+        beta_BAA_spread = pm.Normal('BAA Spread', mu=0, sd=20)
+        beta_M3_initial_returns = pm.Normal('IPO Market Returns', mu=0, sd=20)
+        beta_M3_indust_rets = pm.Normal('Industry Returns', mu=0, sd=20)
 
-        # Hyperparamaters
+        # Hyperparameters
         ## alpha: hyperparameters for neg-binom distribution
         alpha = pm.Gamma('alpha', alpha=.1, beta=.1)
 
 
 
         # #Poisson Model Formula
-        mu = tt.exp(
+        mu = 1 + tt.exp(
                 intercept[class_idx]
                 + beta_underwriter_syndicate_size * df.underwriter_syndicate_size
                 + beta_underwriter_num_leads * df.underwriter_num_leads
                 + beta_underwriter_rank_avg * df.underwriter_rank_avg
-                + beta_FF49_industry * df.FF49_industry
-                # + beta_amends_down * df['Amends Down']
+                # + beta_FF49_industry * FF49_industry
+                + beta_amends_down * df['Amends Down']
                 + beta_num_SEC_amendments * df.num_SEC_amendments
                 + beta_share_overhang * df['Share Overhang']
                 + beta_log_sales * df['log(1+Sales)']
@@ -152,14 +259,17 @@ def mixed_effects():
                     )
 
         # Dependent Variable
-        y_est = pm.Bound(pm.NegativeBinomial('y_est', mu=mu, alpha=alpha, observed=y), lower=1)
-        y_pred = pm.Bound(pm.NegativeBinomial('y_pred', mu=mu, alpha=alpha, shape=y.shape), lower=1)
+        BoundedNegativeBinomial = pm.Bound(pm.NegativeBinomial, lower=1)
+        y_est = BoundedNegativeBinomial('y_est', mu=mu, alpha=alpha, observed=y)
+        y_pred = BoundedNegativeBinomial('y_pred', mu=mu, alpha=alpha, shape=y.shape)
+        # y_est = pm.NegativeBinomial('y_est', mu=mu, alpha=alpha, observed=y)
+        # y_pred = pm.NegativeBinomial('y_pred', mu=mu, alpha=alpha, shape=y.shape)
         # y_est = pm.Poisson('y_est', mu=mu, observed=data)
         # y_pred = pm.Poisson('y_pred', mu=mu, shape=data.shape)
 
         start = pm.find_MAP()
-        # step = pm.Metropolis(start=start)
-        step = pm.NUTS()
+        step = pm.Metropolis(start=start)
+        # step = pm.NUTS()
         # backend = pm.backends.Text('test')
         # trace = pm.sample(NSamples, step, start=start, chain=1, njobs=2, progressbar=True, trace=backend)
         trace = pm.sample(NSamples, step, start=start, njobs=1, progressbar=True)
@@ -167,59 +277,19 @@ def mixed_effects():
         trace2 = trace
         trace = trace[-burn::thin]
 
-        waic = pm.waic(trace)
+        # waic = pm.waic(trace)
         # dic = pm.dic(trace)
 
 
 
     # with pm.Model() as model:
     #     trace_loaded = pm.backends.sqlite.load('FF49_industry.sqlite')
-        y_pred.dump('FF49_industry_missing/y_pred')
+        # y_pred.dump('FF49_industry_missing/y_pred')
 
 
     ## POSTERIOR PREDICTIVE CHECKS
     y_pred = trace.get_values('y_pred')
-    # see if vector of 415 samples corrsponds to 415 obs
-    # ax = plt.subplot()
-    # ax.axvline(y.mean())
-    # sb.distplot(y, ax=ax)
-    # [sb.distplot(y, kde=False, ax=ax) for y in y_pred[10:15]]
-
-    fig = plt.figure(figsize=(10,10))
-    ax1 = fig.add_subplot(311)
-    x_lim=90
-    _ = plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.6, color='black')
-    _ = plt.title('Distribution of Observed Data')
-    ax1.axvline(np.mean(y), linestyle='-', color='black', label='Mean')
-    ax1.axvline(np.percentile(y, 50), linestyle='--', color='black', label='Median')
-    ax1.axvline(np.percentile(y, 5), linestyle='--', color='black', label=r'$5^{th}$, $50^{th}$ and $95^{th}$ Percentile')
-    ax1.axvline(np.percentile(y, 95), linestyle='--', color='black')
-
-
-    ax2 = fig.add_subplot(312)
-    ypred2 = y_pred[-20:-15]
-    ax2.axvline(np.mean(ypred2), linestyle='-', color='black', label='Mean')
-    ax2.axvline(np.percentile(ypred2, 50), linestyle='--', color='black', label='Median')
-    ax2.axvline(np.percentile(ypred2, 5), linestyle='--', color='black', label=r'$5^{th}$, $50^{th}$ and $95^{th}$ Percentile')
-    ax2.axvline(np.percentile(ypred2, 95), linestyle='--', color='black')
-    _ = [plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.2, color=blue) for y in ypred2]
-    _ = plt.xlim(1, x_lim)
-    _ = plt.ylabel('Days to Price Amendment')
-    _ = plt.title('Posterior Predictive Distribution (#1)')
-
-
-    ax3 = fig.add_subplot(313)
-    ypred3 = y_pred[-105:-100]
-    ax3.axvline(np.mean(ypred3), linestyle='-', color='black', label='Mean')
-    ax3.axvline(np.percentile(ypred3, 50), linestyle='--', color='black', label='Median')
-    ax3.axvline(np.percentile(ypred3, 5), linestyle='--', color='black', label=r'$5^{th}$, $50^{th}$ and $95^{th}$ Percentile')
-    ax3.axvline(np.percentile(ypred3, 95), linestyle='--', color='black')
-    _ = [plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.2, color=blue) for y in ypred3]
-    _ = plt.xlim(1, x_lim)
-    _ = plt.xlabel('Days to Price Amendment')
-    _ = plt.title('Posterior Predictive Distribution (#2)')
-    plt.legend(fontsize='small')
-
+    pm.summary(trace, vars=covariates)
 
 
     # PARAMETER POSTERIORS
@@ -280,78 +350,36 @@ def mixed_effects():
 
 
 
-    def participant_y_pred(entity_name, burn=1000, hierarchical_trace=trace):
+    # def participant_y_pred(entity_name, burn=1000, hierarchical_trace=trace):
+    #     """Return posterior predictive for person"""
+    #     ix = np.where(le.classes_ == entity_name)[0][0]
+    #     return hierarchical_trace['y_pred'][burn:, ix]
+
+    def participant_y_pred(entity_name, burn=1000, ypred=y_pred):
         """Return posterior predictive for person"""
         ix = np.where(le.classes_ == entity_name)[0][0]
-        return hierarchical_trace['y_pred'][burn:, ix]
-
+        return ypred[burn:, ix]
 
     days = 7
 
     fig = plt.figure(figsize=(16,10))
     fig.add_subplot(221)
-    entity_plotA('Hlth', days=days)
+    entity_plotA('Up', days=days)
     fig.add_subplot(222)
-    entity_plotB('Hlth')
+    entity_plotB('Up')
 
     fig.add_subplot(223)
-    entity_plotA('Fin', days=days)
+    entity_plotA('Down', days=days)
     fig.add_subplot(224)
-    entity_plotB('Fin')
+    entity_plotB('Down')
+    plt.savefig("figure4-postpreddist-updown")
 
 
 
-    fig = plt.figure(figsize=(16,10))
-    fig.add_subplot(221)
-    entity_plotA('Rtail', days=days)
-    fig.add_subplot(222)
-    entity_plotB('Rtail')
-
-    fig.add_subplot(223)
-    entity_plotA('Softw', days=days)
-    fig.add_subplot(224)
-    entity_plotB('Softw')
 
 
 
-    # messages = pd.read_csv('hangout_chat_data.csv')
-    # le = preprocessing.LabelEncoder()
-    # participants_idx = le.fit_transform(messages['prev_sender'])
-    # participants = le.classes_
-    # n_participants = len(participants)
-
-    # with pm.Model() as model:
-    #     hyper_alpha_sd = pm.Uniform('hyper_alpha_sd', lower=0, upper=50)
-    #     hyper_alpha_mu = pm.Uniform('hyper_alpha_mu', lower=0, upper=10)
-
-    #     hyper_mu_sd = pm.Uniform('hyper_mu_sd', lower=0, upper=50)
-    #     hyper_mu_mu = pm.Uniform('hyper_mu_mu', lower=0, upper=60)
-
-    #     alpha = pm.Gamma('alpha', mu=hyper_alpha_mu, sd=hyper_alpha_sd, shape=n_participants)
-    #     mu = pm.Gamma('mu', mu=hyper_mu_mu, sd=hyper_mu_sd, shape=n_participants)
-
-    #     y_est = pm.NegativeBinomial('y_est',
-    #                                 mu=mu[participants_idx],
-    #                                 alpha=alpha[participants_idx],
-    #                                 observed=messages['time_delay_seconds'].values)
-
-    #     y_pred = pm.NegativeBinomial('y_pred',
-    #                                  mu=mu[participants_idx],
-    #                                  alpha=alpha[participants_idx],
-    #                                  shape=messages['prev_sender'].shape)
-
-    #     backend = SQLite('test.sqlite')
-    #     start = pm.find_MAP()
-    #     step = pm.Metropolis()
-    #     hierarchical_trace = pm.sample(20000, step, progressbar=True, trace=backend)
-
-
-    # with pm.Model() as model:
-    #     trace_loaded = pm.backends.sqlite.load('test.sqlite')
-
-
-
-def entity_plotA(entity_name, days=7, x_lim=60):
+def entity_plotA(entity_name, days=7, x_lim=90):
     ix_check = participant_y_pred(entity_name) > days
     plt.hist(participant_y_pred(entity_name)[~ix_check],
             range=[0, x_lim], bins=x_lim, histtype='stepfilled',
@@ -365,9 +393,9 @@ def entity_plotA(entity_name, days=7, x_lim=60):
     plt.ylabel('Sample Frequency')
     plt.legend()
 
-def entity_plotB(entity_name, x_lim=60):
+def entity_plotB(entity_name, x_lim=90):
     ccolor = colors[1]
-    x = np.linspace(1, 60, num=60)
+    x = np.linspace(1, 90, num=90)
     num_samples = float(len(participant_y_pred(entity_name)))
     prob_lt_x = [100*sum(participant_y_pred(entity_name) < i)/num_samples for i in x]
     plt.plot(x, prob_lt_x, color=ccolor)
@@ -377,7 +405,7 @@ def entity_plotB(entity_name, x_lim=60):
     plt.xlabel('Days')
     plt.ylabel('Cumulative probability')
     plt.ylim(ymin=0, ymax=50)
-    plt.xlim(xmin=0, xmax=60)
+    plt.xlim(xmin=0, xmax=90)
 
 
 
