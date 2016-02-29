@@ -463,7 +463,6 @@ theme_blank1 = theme_pander(base_size=9) + theme(axis.title.x=element_blank(), a
 theme_blank2 = theme_pander(base_size=9) + theme(strip.background=element_blank(), strip.text.x=element_blank(), axis.title.y=element_blank())
 
 # m99
-pdf("traceplots99_main-hurdle.pdf")
 SS <- ggs(m99, par_labels=Pmain, family="b_main.AmendsUp")
 f1 <- ggs_traceplot(SS) + theme_blank1
 f4 <- ggs_density(SS) + theme_blank2
@@ -475,11 +474,11 @@ f5 <- ggs_density(SS) + theme_blank2
 SS <- ggs(m99, par_labels=Pmain, family="b_main.Syndicate.Members")
 f3 <- ggs_traceplot(SS) + theme_blank1
 f6 <- ggs_density(SS) + theme_blank2
+#######################
 
 SS <- ggs(m99, par_labels=Pmain, family="b_main.Underwriter.Rank")
 f7 <- ggs_traceplot(SS) + theme_blank1
 f10 <- ggs_density(SS) + theme_blank2
-#######################
 
 SS <- ggs(m99, par_labels=Pmain, family="b_main.S1A.Amendments")
 f8 <- ggs_traceplot(SS) + theme_blank1
@@ -488,6 +487,7 @@ f11 <- ggs_density(SS) + theme_blank2
 SS <- ggs(m99, par_labels=Pmain, family="b_main.Share.Overhang")
 f9 <- ggs_traceplot(SS) + theme_blank1
 f12 <- ggs_density(SS) + theme_blank2
+#######################
 
 SS <- ggs(m99, par_labels=Pmain, family="b_main.log.Sales")
 f13 <- ggs_traceplot(SS) + theme_blank1
@@ -496,11 +496,11 @@ f16 <- ggs_density(SS) + theme_blank2
 SS <- ggs(m99, par_labels=Pmain, family="b_main.log.Proceeds")
 f14 <- ggs_traceplot(SS) + theme_blank1
 f17 <- ggs_density(SS) + theme_blank2
-###############################
 
 SS <- ggs(m99, par_labels=Pmain, family="b_main.CASI")
 f15 <- ggs_traceplot(SS) + theme_blank1
 f18 <- ggs_density(SS) + theme_blank2
+###############################
 
 SS <- ggs(m99, par_labels=Pmain, family="b_main.BAA.Spread")
 f19 <- ggs_traceplot(SS) + theme_blank1
@@ -515,6 +515,9 @@ f21 <- ggs_traceplot(SS) + theme_blank1
 f24 <- ggs_density(SS) + theme_blank2
 #######################
 
+blank <- grid.rect(gp=gpar(col="white"))
+
+pdf("traceplots99_main-hurdle.pdf")
 grid.arrange(f1, f2, f3, f4, f5, f6,
              f7, f8, f9, f10, f11, f12,
              f13, f14, f15, f16, f17, f18,
@@ -523,7 +526,6 @@ dev.off()
 #########################
 
 
-pdf("traceplots99_spec-hurdle.pdf")
 SS <- ggs(m99, par_labels=Pspec, family="b_spec.Amendment.Delay")
 f1 <- ggs_traceplot(SS) + theme_blank1
 f4 <- ggs_density(SS) + theme_blank2
@@ -567,11 +569,17 @@ SS <- ggs(m99, par_labels=Pspec, family="b_spec.Industry.Returns")
 f19 <- ggs_traceplot(SS) + theme_blank1
 f22 <- ggs_density(SS) + theme_blank2
 
+blank <- grid.rect(gp=gpar(col="white"))
 
-grid.arrange(f1, f2, f3, f4, f5, f6,
-             f7, f8, f9, f10, f11, f12,
-             f13, f14, f15, f16, f17, f18,
-             f19, f22, ncol=3, nrow=8)
+pdf("traceplots99_spec-hurdle.pdf")
+grid.arrange(f1, f2, f3,
+             f4, f5, f6,
+             f7, f8, f9,
+             f10, f11, f12,
+             f13, f14, f15,
+             f16, f17, f18,
+             f19, blank, blank,
+             f22, blank, blank, ncol=3, nrow=8)
 dev.off()
 #########################
 
@@ -598,11 +606,11 @@ indust <- c("Aero", "Agric", "Autos", "Banks", "Beer", "BldMt", "Books", "BusSv"
             "Rtail", "Rubbr", "Ships", "Softw", "Steel", "Telcm", "Toys", "Trans", "Txtls", "Util", "Whlsl")
 # Rindust <- data.frame(Parameter = paste("r_FF49.Industry.", indust, ".Intercept.", sep=""), Label = indust)
 Rindust <- data.frame(Parameter = paste("r_FF49.Industry.", indust, ".main.", sep=""), Label = indust)
-S3 <- ggs(m111, par_labels=Rindust, family="^r_FF49")
+S11 <- ggs(m111, par_labels=Rindust, family="^r_FF49")
 
 
 pdf("ggs_caterpillar_industries-m11.pdf")
-ggs_caterpillar(S3, greek=TRUE) + xlab("Random Industry Effects Estimates") + theme_tufte(base_size=12)
+ggs_caterpillar(S11, greek=TRUE) + xlab("Random Industry Effects Estimates") + theme_tufte(base_size=12)
 # greek=TRUE -> y_scale_discrete (scales y axis)
 dev.off()
 
@@ -628,7 +636,7 @@ ci(ggs(m111, family='shape'), thick_ci = c(0.05, 0.95), thin_ci = c(0.025, 0.975
 
 
 # m111
-pdf("traceplots11_main-hurdle.pdf")
+library(grid)
 SS <- ggs(m111, par_labels=Pmain, family="b_main.Lead.Underwriters")
 f1 <- ggs_traceplot(SS) + theme_blank1
 f4 <- ggs_density(SS) + theme_blank2
@@ -640,11 +648,11 @@ f5 <- ggs_density(SS) + theme_blank2
 SS <- ggs(m111, par_labels=Pmain, family="b_main.Underwriter.Rank")
 f3 <- ggs_traceplot(SS) + theme_blank1
 f6 <- ggs_density(SS) + theme_blank2
+#######################
 
 SS <- ggs(m111, par_labels=Pmain, family="b_main.S1A.Amendments")
 f7 <- ggs_traceplot(SS) + theme_blank1
 f10 <- ggs_density(SS) + theme_blank2
-#######################
 
 SS <- ggs(m111, par_labels=Pmain, family="b_main.Share.Overhang")
 f8 <- ggs_traceplot(SS) + theme_blank1
@@ -653,6 +661,7 @@ f11 <- ggs_density(SS) + theme_blank2
 SS <- ggs(m111, par_labels=Pmain, family="b_main.log.Sales")
 f9 <- ggs_traceplot(SS) + theme_blank1
 f12 <- ggs_density(SS) + theme_blank2
+#######################
 
 SS <- ggs(m111, par_labels=Pmain, family="b_main.log.Proceeds")
 f13 <- ggs_traceplot(SS) + theme_blank1
@@ -661,11 +670,11 @@ f16 <- ggs_density(SS) + theme_blank2
 SS <- ggs(m111, par_labels=Pmain, family="b_main.CASI")
 f14 <- ggs_traceplot(SS) + theme_blank1
 f17 <- ggs_density(SS) + theme_blank2
-###############################
 
 SS <- ggs(m111, par_labels=Pmain, family="b_main.BAA.Spread")
 f15 <- ggs_traceplot(SS) + theme_blank1
 f18 <- ggs_density(SS) + theme_blank2
+#######################
 
 SS <- ggs(m111, par_labels=Pmain, family="b_main.Ipo.Market.Returns")
 f19 <- ggs_traceplot(SS) + theme_blank1
@@ -675,18 +684,23 @@ SS <- ggs(m111, par_labels=Pmain, family="b_main.Industry.Returns")
 f20 <- ggs_traceplot(SS) + theme_blank1
 f23 <- ggs_density(SS) + theme_blank2
 
-
+blank <- grid.rect(gp=gpar(col="white"))
 #######################
 
-grid.arrange(f1, f2, f3, f4, f5, f6,
-             f7, f8, f9, f10, f11, f12,
-             f13, f14, f15, f16, f17, f18,
-             f19, f20, f22, f23, ncol=3, nrow=8)
+pdf("traceplots11_main-hurdle.pdf")
+grid.arrange(f1, f2, f3,
+             f4, f5, f6,
+             f7, f8, f9,
+             f10, f11, f12,
+             f13, f14, f15,
+             f16, f17, f18,
+             f19, f20, blank,
+             f22, f23, blank, ncol=3, nrow=8)
 dev.off()
 #########################
 
 
-pdf("traceplots11_spec-hurdle.pdf")
+#### M11 spec
 SS <- ggs(m111, par_labels=Pspec, family="b_spec.Amendment.Delay")
 f1 <- ggs_traceplot(SS) + theme_blank1
 f4 <- ggs_density(SS) + theme_blank2
@@ -728,13 +742,19 @@ f18 <- ggs_density(SS) + theme_blank2
 
 SS <- ggs(m111, par_labels=Pspec, family="b_spec.Industry.Returns")
 f19 <- ggs_traceplot(SS) + theme_blank1
-f22 <- ggs_density(SS) + theme_blank2
+f20 <- ggs_density(SS) + theme_blank2
 
+blank <- grid.rect(gp=gpar(col="white"))
 
-grid.arrange(f1, f2, f3, f4, f5, f6,
-             f7, f8, f9, f10, f11, f12,
-             f13, f14, f15, f16, f17, f18,
-             f19, f22, ncol=3, nrow=8)
+pdf("traceplots11_spec-hurdle.pdf")
+grid.arrange(f1, f2, f3,
+             f4, f5, f6,
+             f7, f8, f9,
+             f10, f11, f12,
+             f13, f14, f15,
+             f16, f17, f18,
+             f19, blank, blank,
+             f20, blank, blank, ncol=3, nrow=8)
 dev.off()
 #########################
 
@@ -743,29 +763,6 @@ dev.off()
 
 
 
-#### rstanarm, no truncated negbinom
-# eq7 <- df[['Days to Amendment']] ~
-#     (1|df[['FF49 Industry']]) +
-#     df$'Amends' +
-#     df$'#Lead Underwriters' +
-#     df$'#Syndicate Members' +
-#     df$'Underwriter Rank' +
-#     df$'#S1A Amendments' +
-#     df$'Share Overhang' +
-#     df$'log(1+Sales)' +
-#     df$'log(Proceeds)' +
-#     df$'CASI' +
-#     df$'IPO Market Returns' +
-#     df$'Industry Returns' +
-#     df$'BAA Spread'
-
-# require(rstanarm)
-# mm7 <- stan_glmer(eq7, data=dfa, family=neg_binomial_2(link='log'))
-# # ci95 <- round(posterior_interval(mm5, prob=0.95), 2)
-# # launch_shinystan(mm7)
-
-# ypred_mm7 <- posterior_predict(mm7)
-# MASS::write.matrix(ypred_mm7, file='ypred_mm7.rdat')
 
 
 
@@ -816,8 +813,8 @@ stargazer(m9.lme1, omit=c("Year", "FF49.Industry"), omit.labels=c("Year Dummies"
 
 
 eq22 <- close_return ~ Underwriter.Rank +
-    (1|underwriter_first_lead) +
-    # (1|underwriter_groups) +
+    # (1|underwriter_first_lead) +
+    (1|underwriter_groups) +
     # Lead.Underwriters +
     # Syndicate.Members +
     Share.Overhang +

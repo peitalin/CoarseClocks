@@ -16,6 +16,7 @@ from sklearn import preprocessing
 from numpy import exp, e, log
 from math import factorial
 from matplotlib.offsetbox import AnnotationBbox, TextArea
+from collections import Counter
 
 colors = sb.color_palette("muted")
 BASEDIR = os.path.join(os.path.expanduser("~"), "Data", "IPO", "NASDAQ",)
@@ -23,12 +24,15 @@ FINALJSON = json.loads(open(BASEDIR + '/final_json.txt').read())
 
 df = pd.read_csv(BASEDIR + "/df.csv", dtype={'cik':object, 'Year':object, 'SIC':object})
 df.set_index("cik", inplace=True)
-df.drop(['1087294', '1344376'], inplace=1) # 1st update took longer than a year
-# dfa = df[df.amends != "None"]
-# df = df[df.amends != "None"]
+df.drop(['1087294', '1368308'], inplace=1) # 1st update took longer than a year
+df = df[df.days_to_first_price_change > 0]
+df = df[df.days_to_first_price_change < 300]
+dfa = df[df.amends != "None"]
 ciks = list(df.index)
 
-df['days_to_first_price_update'] = [-999 if np.isnan(x) else x for x in  df.days_to_first_price_update]
+# df['days_to_first_price_update'] = [-999 if np.isnan(x) else x for x in  df.days_to_first_price_update]
+df['days_to_first_price_update'] = [0 if np.isnan(x) else x for x in  df.days_to_first_price_update]
+
 CASI = 'IoT_15day_CASI_weighted_finance'
 df['#Syndicate Members'] = df.underwriter_syndicate_size
 df['#Lead Underwriters'] = df.underwriter_num_leads
@@ -62,104 +66,146 @@ purple = rgb_to_hex(sb.color_palette("deep")[3])
 
 def posterior_predictive_check():
 
-    dfa = df[df.amends != "None"]
-    y = dfa['days_to_first_price_update'].values
-    yup = dfa[dfa.amends == 'Up']['days_to_first_price_update'].values
-    ydown = dfa[dfa.amends == 'Down']['days_to_first_price_update'].values
+    modeltype = 'hurdle'
+    # modeltype = 'negbin'
+
+    if modeltype =='hurdle':
+        y = df['days_to_first_price_update'].values
+    else:
+        y = dfa['days_to_first_price_update'].values
+
+    y_full = y
+
+
     #### Import y-pred from RStan
-    # y_pred = np.asarray(pd.read_fwf('ypred_m5.rdat')) # brms hurdle model
-    y_pred = np.asarray(pd.read_fwf('ypred_m6.rdat')) # brms negbin trunc zero
-    # y_pred = np.asarray(pd.read_fwf('ypred_mm7.rdat')) # rstanarm negbin
+    ypred_full = np.asarray(pd.read_fwf('ypred_m7.rdat')) # brms hurdle model
+    ypred_full = np.asarray(pd.read_fwf('ypred_m8.rdat')) # brms hurdle model, main:spec
+    # ypred_full = np.asarray(pd.read_fwf('ypred_m6.rdat')) # brms negbin trunc zero
+    # y_pred = np.asarray(pd.read_fwf('ypred_m7.rdat')) # rstanarm negbin
+
+
+
+    direction = 'Up'
+    # direction = 'Down'
+    # direction = 'None'
+    direction = 'Full'
+
+    amends_direction = np.where(df.amends==direction)[0]
+
+    if direction in ["Up", "Down", "None"]:
+        y = y_full[amends_direction]
+        y_pred = ypred_full[:, amends_direction]
+    else:
+        y = y_full
+        y_pred = ypred_full
+
+
 
     # pp_check: compare distibutions of test statistics T(y) vs. T(yrep)
-    test_stat, tname = np.mean, 'Mean'
-    test_stat, tname = np.min, 'Min'
-    test_stat, tname = np.max, 'Max'
-    test_stat, tname = np.median, 'Median'
-    test_stat, tname = np.std, 'St. Dev.'
+    def count_zeros(x):
+        return Counter(x)[0]
 
-    fig = plt.figure(figsize=(10,8))
-    fig.add_subplot(111)
-    test_stats_rep = [test_stat(yy) for yy in y_pred]
-    bayes_pval = round(len([1 for yrep in test_stats_rep if yrep > test_stat(y)]) / len(test_stats_rep), 3)
-    pval = r"$Pr(T(y_{{rep}}) > T(y_{{obs}}) | y_{{obs}}) = {}$".format(bayes_pval)
-    ax0 = sb.distplot(test_stats_rep, kde=False, label=r"$T(y_{rep})$")
-    ax0.axvline(test_stat(y), color=blue, linewidth=4, label=r"$T(y_{obs})$")
-    ab = AnnotationBbox(TextArea(pval,
-            textprops={'fontsize':14}), (900, 60),
-            xycoords='figure points',
-            bboxprops={'boxstyle': 'square', 'fc':'#efefef', 'ec': '#9f9f9f'})
-    ax0.add_artist(ab)
-    plt.title("Test statistic: {}".format(tname))
-    plt.legend(fontsize=14)
-    plt.savefig("fig-teststat-{}".format(test_stat.__name__))
+    test_stats = [np.mean, np.min, np.max, np.median, np.std, count_zeros]
+    tnames = ['Mean', 'Min', 'Max', 'Median', 'St-Dev', 'Number of Zeros']
+
+    for test_stat, tname in zip(test_stats, tnames):
+        fig = plt.figure(figsize=(10,3))
+        fig.add_subplot(111)
+        test_stats_rep = [test_stat(yy) for yy in y_pred]
+        bayes_pval = round(len([1 for yrep in test_stats_rep if yrep > test_stat(y)]) / len(test_stats_rep), 3)
+        pval = r"$Pr(T(y_{{rep}}) > T(y_{{obs}}) | y_{{obs}}) = {}$".format(bayes_pval)
+        ax0 = sb.distplot(test_stats_rep, kde=False, label=r"$T(y_{rep})$")
+        ax0.axvline(test_stat(y), color=blue, linewidth=4, label=r"$T(y_{obs})$")
+        ab = AnnotationBbox(TextArea(pval,
+                textprops={'fontsize':14}), (570, 100),
+                xycoords='figure points',
+                bboxprops={'boxstyle': 'square', 'fc':'#efefef', 'ec': '#9f9f9f'})
+        ax0.add_artist(ab)
+        plt.title("Test statistic: {}".format(tname))
+        plt.legend(fontsize=14)
+        plt.savefig("fig-{}-{}-hurdle".format(direction, tname))
+        plt.close()
+
+    # if modeltype == 'negbin':
+    #     fig = plt.figure(figsize=(10,3))
+    #     fig.add_subplot(111)
+    #     test_stats_rep = [test_stat(yy) for yy in y_pred]
+    #     bayes_pval = round(len([1 for yrep in test_stats_rep if yrep > test_stat(y)]) / len(test_stats_rep), 3)
+    #     pval = r"$Pr(T(y_{{rep}}) > T(y_{{obs}}) | y_{{obs}}) = {}$".format(bayes_pval)
+    #     ax0 = sb.distplot(test_stats_rep, kde=False, label=r"$T(y_{rep})$")
+    #     ax0.axvline(test_stat(y), color=blue, linewidth=4, label=r"$T(y_{obs})$")
+    #     ab = AnnotationBbox(TextArea(pval,
+    #             textprops={'fontsize':14}), (570, 100),
+    #             xycoords='figure points',
+    #             bboxprops={'boxstyle': 'square', 'fc':'#efefef', 'ec': '#9f9f9f'})
+    #     ax0.add_artist(ab)
+    #     plt.title("Test statistic: {}".format(tname))
+    #     plt.legend(fontsize=14)
+    #     plt.savefig("fig-teststat-{}".format(test_stat.__name__))
+
 
 
     # Posterior Predictive Distributions
-    # jointplot = 0
-    jointplot = 1
-    if jointplot:
-        fig = plt.figure(figsize=(10,8))
-        ax1 = fig.add_subplot(311)
-        x_lim=120
-        _ = plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.7, color=red)
-        _ = plt.title('Panel A: Distribution of Observed Data', fontsize='large')
+    x_lim=120
+    y_lim=50
 
-        y = dfa['days_to_first_price_update'].values
-        ax1.axvline(np.mean(y), linestyle='-', color='black', label='Mean')
-        ax1.axvline(np.percentile(y, 50), linestyle='--', color='black', label='Median')
-        ax1.axvline(np.percentile(y, 5), linestyle='-.', color='black', label=r'$5^{th}$ and $95^{th}$ Percentile')
-        ax1.axvline(np.percentile(y, 95), linestyle='-.', color='black')
+    if direction == 'Up':
+        color=blue
+    elif direction == 'Down':
+        color=purple
+    elif direction == 'None':
+        color='black'
     else:
-        fig = plt.figure(figsize=(10,8))
-        ax1 = fig.add_subplot(311)
-        x_lim=120
-        y = yup
-        _ = plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.6, color=blue)
-        _ = plt.title('Panel A: Distribution of Observed Data', fontsize='large')
-        ax1.axvline(np.mean(y), linestyle='-', color=blue, label='Mean')
-        ax1.axvline(np.percentile(y, 50), linestyle='--', color=blue, label='Median')
-        # ax1.axvline(np.percentile(y, 5), linestyle='-.', color=blue, label=r'$5^{th}$ and $95^{th}$ Percentile')
-        # ax1.axvline(np.percentile(y, 95), linestyle='-.', color=blue)
+        color=red
 
-        ax1 = fig.add_subplot(311)
-        y = ydown
-        _ = plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.6, color=purple)
-        _ = plt.title('Panel A: Distribution of Observed Data', fontsize='large')
-        ax1.axvline(np.mean(y), linestyle='-', color=purple, label='Mean')
-        ax1.axvline(np.percentile(y, 50), linestyle='--', color=purple, label='Median')
-        # ax1.axvline(np.percentile(y, 5), linestyle='-.', color=purple, label=r'$5^{th}$ and $95^{th}$ Percentile')
-        # ax1.axvline(np.percentile(y, 95), linestyle='-.', color=purple)
+    # observed y
+    fig = plt.figure(figsize=(10,6))
+    ax1 = fig.add_subplot(211)
+    _ = plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.7, color=color)
+    _ = plt.title('Panel A: Distribution of Observed Data', fontsize='large')
+    ax1.axvline(np.mean(y), linestyle='-', color='black', label='Mean')
+    ax1.axvline(np.percentile(y, 50), linestyle='--', color='black', label='Median')
+    ax1.axvline(np.percentile(y, 5), linestyle='-.', color='black', label=r'$5^{th}$ and $95^{th}$ Percentile')
+    ax1.axvline(np.percentile(y, 95), linestyle='-.', color='black')
+    _ = plt.ylabel('Frequency')
+    # _ = plt.xlabel('Days to Price Amendment')
+    plt.ylim(0, y_lim)
 
 
-    ax2 = fig.add_subplot(312)
-    ypred2 = y_pred[-300:-200:20]
+
+
+    ax2 = fig.add_subplot(212)
+    ypred2 = y_pred[-200:-100:20]
     ax2.axvline(np.mean(ypred2), linestyle='-', color='black', label='Mean')
     ax2.axvline(np.percentile(ypred2, 50), linestyle='--', color='black', label='Median')
     ax2.axvline(np.percentile(ypred2, 5), linestyle='-.', color='black', label=r'$5^{th}$ and $95^{th}$ Percentile')
     ax2.axvline(np.percentile(ypred2, 95), linestyle='-.', color='black')
-    _ = [plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.2, color=blue) for y in ypred2]
-    _ = plt.xlim(1, x_lim)
+    _ = [plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.2, color=color) for y in ypred2]
+    _ = plt.xlim(0, x_lim)
+    _ = plt.title('Panel B: Posterior Predictive Distribution', fontsize='large')
     _ = plt.ylabel('Frequency')
-    _ = plt.title('Panel B: Posterior Predictive Distribution (#1)', fontsize='large')
-
-
-    ax3 = fig.add_subplot(313)
-    ypred3 = y_pred[-300:-200:20]
-    ax3.axvline(np.mean(ypred3), linestyle='-', color='black', label='Mean')
-    ax3.axvline(np.percentile(ypred3, 50), linestyle='--', color='black', label='Median')
-    ax3.axvline(np.percentile(ypred3, 5), linestyle='-.', color='black', label=r'$5^{th}$ and $95^{th}$ Percentile')
-    ax3.axvline(np.percentile(ypred3, 95), linestyle='-.', color='black')
-    _ = [plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.2, color=blue) for y in ypred3]
-    _ = plt.xlim(1, x_lim)
     _ = plt.xlabel('Days to Price Amendment')
-    _ = plt.title('Panel C: Posterior Predictive Distribution (#2)', fontsize='large')
     plt.legend(fontsize='small')
+    plt.ylim(0, y_lim)
 
-    if jointplot:
-        plt.savefig('figA_posterior-pred-check')
-    else:
+    # ax3 = fig.add_subplot(313)
+    # ypred3 = y_pred[-300:-200:20]
+    # ax3.axvline(np.mean(ypred3), linestyle='-', color='black', label='Mean')
+    # ax3.axvline(np.percentile(ypred3, 50), linestyle='--', color='black', label='Median')
+    # ax3.axvline(np.percentile(ypred3, 5), linestyle='-.', color='black', label=r'$5^{th}$ and $95^{th}$ Percentile')
+    # ax3.axvline(np.percentile(ypred3, 95), linestyle='-.', color='black')
+    # _ = [plt.hist(y, range=[0, x_lim], bins=x_lim, histtype='stepfilled', alpha=0.2, color=blue) for y in ypred3]
+    # _ = plt.xlim(0, x_lim)
+    # _ = plt.xlabel('Days to Price Amendment')
+    # _ = plt.title('Panel C: Posterior Predictive Distribution (#2)', fontsize='large')
+    # plt.legend(fontsize='small')
+
+    if modeltype == 'hurdle':
+        plt.savefig('figA_posterior-pred-check-hurdle-{}'.format(direction))
+    elif modeltype == 'negbin':
         plt.savefig('figA_posterior-pred-check2')
+    else:
+        plt.savefig('figA_posterior_pred-check?')
 
 
 
