@@ -8,6 +8,12 @@ require(ggmcmc)
 library(gridExtra)
 library(ggthemes)
 
+library(rstan)
+require(brms)
+rstan_options (auto_write=TRUE)
+options (mc.cores=parallel::detectCores ()) # Run on multiple cores
+
+
 # df <- data.table::fread("~/Data/IPO/NASDAQ/df.csv", colClasses=c(cik="character", SIC="character", Year="Factor"))
 df <- data.table::fread("df.csv", colClasses=c(cik="character", SIC="character", Year="Factor", amends="Factor"))
 df <- df[df$days_to_first_price_change > 0]
@@ -56,6 +62,18 @@ dfn <- dfn[, c('amends', covar), with=F]
 ###############################################################
 
 
+eq1 <- Surv(Days.to.Amend.Down) ~ Lead.Underwriters +
+    Syndicate.Members +
+    Underwriter.Rank +
+    # AmendsUp +
+    S1A.Amendments +
+    Share.Overhang +
+    log.Sales +
+    log.Proceeds +
+    CASI +
+    Ipo.Market.Returns +
+    Industry.Returns +
+    BAA.Spread + Year + FF49.Industry
 
 eq1 <- Days.to.Amendment ~ Lead.Underwriters +
     Syndicate.Members +
@@ -142,10 +160,6 @@ stargazer(m2, omit=c("FF49.Industry", "Year"), omit.labels=c("Industry Dummies",
 
 
 
-library(rstan)
-require(brms)
-rstan_options (auto_write=TRUE)
-options (mc.cores=parallel::detectCores ()) # Run on multiple cores
 
 # NegBinomial
 
