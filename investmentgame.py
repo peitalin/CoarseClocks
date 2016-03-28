@@ -246,9 +246,9 @@ def animations():
 
         if switchpoint*2.5 > i >= switchpoint*2:
             global shift
-            shift = (i-switchpoint*2)/1000
+            shift = (i-switchpoint*2)/100
             # shift in investment threshold (increase in public signal): x - shift
-            y = VA(x, x-shift, 20, i + (i-switchpoint)**1.5, 0)
+            y = VA(x, x-shift, 20, i + (i-switchpoint)**2, 0)
             line.set_data(x, y)
             line.set_color(purple)
             # line, = ax.plot(x, y, purple)
@@ -304,7 +304,7 @@ def animations():
         return line, time_text
 
     anim = animation.FuncAnimation(fig, animate, init_func=init,
-                                   frames=400, interval=2, blit=True, repeat_delay=200)
+                                   frames=300, interval=2, blit=True, repeat_delay=200)
 
     anim.save('basic_animation_exogenous_signal.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
     plt.show()
