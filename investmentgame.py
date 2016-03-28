@@ -297,7 +297,7 @@ def animations():
         return line, time_text
 
     anim = animation.FuncAnimation(fig, animate, init_func=init,
-                                   frames=300, interval=2, blit=True, repeat_delay=200)
+                                   frames=600, interval=2, blit=True, repeat_delay=200)
 
     anim.save('basic_animation_exogenous_signal.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
     plt.show()
