@@ -240,25 +240,16 @@ def animations():
 
     def animate(i):
         global line
+        global rate
+        global shift
         x = linspace(-1.5, 1.5, 1000)
         switchpoint = 4.1
         i /= 20
 
-        if switchpoint*2.5 > i >= switchpoint*2:
-            global shift
-            shift = (i-switchpoint*2)/100
+        if i >= switchpoint*1.5:
+            shift = ((i-switchpoint*1.5)/80)
             # shift in investment threshold (increase in public signal): x - shift
-            y = VA(x, x-shift, 20, i + (i-switchpoint)**2, 0)
-            line.set_data(x, y)
-            line.set_color(purple)
-            # line, = ax.plot(x, y, purple)
-            taup = i**1
-            taui = 20
-            label = r"Precision of public and private signals: $\tau_p={}, \tau_i={}$".format(taup, taui)
-            equilibrium_text.set_text("Multiple equilibria")
-
-        elif i >= switchpoint*2.5:
-            y = VA(x, x-shift, 20, i + (i-switchpoint)**1.5, 0)
+            y = VA(x, x-shift, 20, i + rate + (i-switchpoint*1.5)**2, 0)
             line.set_data(x, y)
             line.set_color(purple)
             # line, = ax.plot(x, y, purple)
@@ -269,7 +260,8 @@ def animations():
 
 
         elif i >= switchpoint:
-            y = VA(x, x, 20, i + (i-switchpoint)**1.5, 0)
+            rate = (i-switchpoint)**1.5
+            y = VA(x, x, 20, i + rate, 0)
             line.set_data(x, y)
             line.set_color(purple)
             # line, = ax.plot(x, y, purple)
@@ -287,7 +279,8 @@ def animations():
             taui = 20
             label = r"Precision of public and private signals: $\tau_p={}, \tau_i={}$".format(taup, taui)
 
-        if i == switchpoint*2:
+        if 1/20 > (i - switchpoint*1.5) > 0:
+            # i increments in integers, so test remainder is in [0, 1]
             ax.plot(x, y, purple, alpha=0.5, linestyle='--')
 
         if i == switchpoint:
