@@ -246,7 +246,7 @@ def animations():
 
         if switchpoint*2.5 > i >= switchpoint*2:
             global shift
-            shift = np.sqrt((i-switchpoint)*2/1000)
+            shift = (i-switchpoint*2)/1000
             # shift in investment threshold (increase in public signal): x - shift
             y = VA(x, x-shift, 20, i + (i-switchpoint)**1.5, 0)
             line.set_data(x, y)
@@ -257,7 +257,7 @@ def animations():
             label = r"Precision of public and private signals: $\tau_p={}, \tau_i={}$".format(taup, taui)
             equilibrium_text.set_text("Multiple equilibria")
 
-        elif i >= switchpoint*2:
+        elif i >= switchpoint*2.5:
             y = VA(x, x-shift, 20, i + (i-switchpoint)**1.5, 0)
             line.set_data(x, y)
             line.set_color(purple)
