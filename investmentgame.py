@@ -246,10 +246,10 @@ def animations():
         switchpoint = 4.1
         i /= 20
 
-        if i >= switchpoint*1.5:
-            shift = ((i-switchpoint*1.5)/80)
+        if i >= switchpoint*2:
+            shift = ((i-switchpoint*2)/80)
             # shift in investment threshold (increase in public signal): x - shift
-            y = VA(x, x-shift, 20, i + rate + (i-switchpoint*1.5)**2, 0)
+            y = VA(x, x-shift, 20, i + rate + (i-switchpoint*2)**2, 0)
             line.set_data(x, y)
             line.set_color(purple)
             # line, = ax.plot(x, y, purple)
@@ -277,9 +277,9 @@ def animations():
             # line, = ax.plot(x, y, blue)
             taup = i**1
             taui = 20
-            label = r"Precision of public and private signals: $\tau_p={}, \tau_i={}$".format(taup, taui)
+            label = r"Precision of public and private signals: $\tau_p={}$,\t $\tau_i={}$".format(taup, taui)
 
-        if 1/20 > (i - switchpoint*1.5) > 0:
+        if 1/20 >= (i - switchpoint*2) >= 0:
             # i increments in integers, so test remainder is in [0, 1]
             ax.plot(x, y, purple, alpha=0.5, linestyle='--')
 
